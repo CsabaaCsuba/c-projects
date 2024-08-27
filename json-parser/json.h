@@ -101,5 +101,28 @@ Json* init_json(JsonRow* FirstRowPtr){ //If fails, returns NULL
     CreatedJsonPtr->JsonRowPtr = FirstRowPtr;
 
     return CreatedJsonPtr;
-
 }
+
+
+//untested
+Json* add_to_json(Json* JsonPtr, JsonRow* RowPtr){
+    if (RowPtr == NULL || JsonPtr == NULL){
+        printf("input row ptr or json ptr is null.\n");
+        return NULL;
+    }
+    JsonRow* NewRowPtr = realloc(JsonPtr->JsonRowPtr, JsonPtr->len+sizeof(JsonRow)+1);
+    if (NewRowPtr == NULL){
+        printf("new row ptr is null.\n");
+        return NULL;
+    }
+    NewRowPtr[JsonPtr->len] = *RowPtr;
+
+    JsonPtr->JsonRowPtr = NewRowPtr;
+
+    return JsonPtr;
+}
+
+// char* get_keys(Json* JsonPtr){
+
+//     return "";
+// }

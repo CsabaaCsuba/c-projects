@@ -18,17 +18,20 @@ int main(){
     printf("Json's third row values: %s", (char*)ThirdRow->ValuePtr+6);
 
 
-
-
     Json* Json1 = init_json(ThirdRow);
     printf("Json's key count: %d\n", Json1->len);
-    printf("Json's value count: %d", Json1->JsonRowPtr->len);
+    printf("Json's value count: %d\n", Json1->JsonRowPtr->len);
 
     JsonRow* FourthRow = init_row("jsondata", Json1, JSON, 1);
     
-    printf("Fourth row's json data: %s", (char*)((Json*)(FourthRow->ValuePtr))->JsonRowPtr->ValuePtr);
+    printf("Fourth row's json data: %s\n", (char*)((Json*)(FourthRow->ValuePtr))->JsonRowPtr->ValuePtr);
 
     Json* Json2 = init_json(FourthRow);
+    printf("Json's json value's first value: %s\n", (char*)((Json*)Json2->JsonRowPtr->ValuePtr)->JsonRowPtr->ValuePtr);
+
+    add_to_json(Json2, FirstRow);
+
+    printf("Second json's second keys' value: %d", *(int*)Json2->JsonRowPtr[1].ValuePtr);
 
     return 0;
 }
