@@ -1,4 +1,4 @@
-#define MAX_LAYER_SIZE 512 * 512
+#define MAX_LAYER_SIZE 262144 //512 * 512
 
 typedef struct matrix {
     double *data;
@@ -88,14 +88,4 @@ void PrintLayerNeurons(layer* PrintableLayer){
         printf("%.3f", PrintableLayer->NeuronArrPtr[i].value);
     }
     printf("\n(%d neurons)\n\n", PrintableLayer->neuron_count);
-}
-
-void PrintNeuronWeights(neuron* NeuronPtr){
-    if (NeuronPtr->WeightsMatrixPtr == NULL){
-        printf("there are no weights stored in this neuron.\n");
-        return;
-    }
-    for (int i=0; i<NeuronPtr->WeightsMatrixPtr->cols; i++){
-        
-    }
 }
