@@ -140,7 +140,7 @@ char** get_keys(Json* JsonPtr){
     int current_strlen = strlen(JsonPtr->JsonRowPtr[0].KeyPtr);
 
     //copy the first json value to the return string.
-    char** ReturnStr = (char**) calloc(current_strlen+1, 1); //initialize a one-byte string at first.
+    char** ReturnStr = (char**) malloc(current_strlen+1); //initialize a one-byte string at first.
 
     if (ReturnStr == NULL){
             printf("malloc failed.\n");
