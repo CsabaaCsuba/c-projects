@@ -17,6 +17,11 @@ typedef struct {
     JsonRow* JsonRowPtr;
 } Json;
 
+// typedef struct {
+//     char* ptr;
+//     int len;
+// } MyString;
+
 JsonRow* init_row(char* InputKeyPtr, void* InputValuePtr, TYPE InputType, int ValuesLength){
     if (InputKeyPtr == NULL || InputValuePtr == NULL || InputType > 3){
         printf("Null pointers received or InputType is incorrect value.\n");
@@ -119,10 +124,51 @@ Json* add_to_json(Json* JsonPtr, JsonRow* RowPtr){
 
     JsonPtr->JsonRowPtr = NewRowPtr;
 
+    JsonPtr->len++;
+
     return JsonPtr;
 }
 
-// char* get_keys(Json* JsonPtr){
+char** get_keys(Json* JsonPtr){
+    //check if json is legit, and first row is legit, and first row has a key
+    if (JsonPtr == NULL || JsonPtr->JsonRowPtr == NULL || JsonPtr->JsonRowPtr[0].KeyPtr == NULL){
+        printf("Some input ptr was null.\n");
+        return NULL;
+    }
 
-//     return "";
-// }
+    int KeyCount = JsonPtr->len;
+    int current_strlen = strlen(JsonPtr->JsonRowPtr[0].KeyPtr);
+
+    //copy the first json value to the return string.
+    char** ReturnStr = (char**) calloc(current_strlen+1, 1); //initialize a one-byte string at first.
+
+    if (ReturnStr == NULL){
+            printf("malloc failed.\n");
+            return NULL;
+    }
+    strcpy(ReturnStr[0], JsonPtr->JsonRowPtr[0].KeyPtr);
+
+    
+    for (int i=1; i<KeyCount; i++){
+        current_strlen = strlen(JsonPtr->JsonRowPtr[i].KeyPtr);
+        printf("String: %s, ptr: %p, length: %d\n", JsonPtr->JsonRowPtr[i].KeyPtr, JsonPtr->JsonRowPtr[i].KeyPtr, current_strlen);
+        ReturnStr = realloc(ReturnStr[i], strlen(JsonPtr->JsonRowPtr[i].KeyPtr)+1);
+        if (ReturnStr == NULL){
+            printf("realloc failed.\n");
+            return NULL;
+        }
+        // strcat(ReturnStr, JsonPtr->JsonRowPtr[i].KeyPtr);
+        strncpy(ReturnStr[current_strlen], JsonPtr->JsonRowPtr[i].KeyPtr, current_strlen);
+
+        // if (NULL == strcpy(ReturnStr+strlen(JsonPtr->JsonRowPtr[i].KeyPtr), JsonPtr->JsonRowPtr[i].KeyPtr)){
+        //     printf("string copy operation failed.\n");
+        //     return NULL;
+        // }
+        // ReturnStr[strlen(ReturnStr)] = '\0'; //null-byte as current last character for character separation.
+
+    }
+
+    printf("Constructed string: %s\n", ReturnStr[1]);
+
+    return ReturnStr;
+}

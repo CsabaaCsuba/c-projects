@@ -31,7 +31,9 @@ int main(){
 
     add_to_json(Json2, FirstRow);
 
-    printf("Second json's second keys' value: %d", *(int*)Json2->JsonRowPtr[1].ValuePtr);
+    printf("Second json's second keys' value: %d\n", *(int*)Json2->JsonRowPtr[1].ValuePtr);
+
+    printf("Keys: %s\n", get_keys(Json2)[0]);
 
     return 0;
 }

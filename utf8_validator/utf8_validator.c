@@ -15,7 +15,10 @@ int main(){
     
     
     utf8_string MyString;
-    init_utf8_string(&MyString);
+    if (init_utf8_string(&MyString) == NULL){
+        printf("utf8 string initialization failed.\n");
+        return -1;
+    }
     append_to_str(&MyString, "Halohalo");
     append_to_str(&MyString, "bruh");
 
@@ -39,9 +42,9 @@ int main(){
         }
         append_to_str(&InputString, (char*)&input_buff);
     }
-    printf("Input string at the end: %s", InputString.RawStrPtr);
+    printf("Input string at the end: %s\n", InputString.RawStrPtr);
 
-    // free_utf8_string(&InputString);
+    free_utf8_string(MyStringPtr2);
 
     return 0;
 }

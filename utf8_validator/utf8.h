@@ -122,7 +122,7 @@ utf8_string* append_to_str(utf8_string* StrPointer, char* SourcePtr){
     }
 
     //set null byte.
-    NewPtr[StrPointer->CodePointCount+strlen(SourcePtr)] = '\0';
+    // NewPtr[StrPointer->CodePointCount+strlen(SourcePtr)] = '\0';
     
     StrPointer->RawStrPtr = NewPtr;
     int stringlen = strlen(NewPtr);
@@ -132,7 +132,7 @@ utf8_string* append_to_str(utf8_string* StrPointer, char* SourcePtr){
         printf("string is not valid utf8.\n");
         return NULL;
     }
-    free(SourcePtr);
+    // free(SourcePtr);
     return StrPointer;
 }
 
@@ -164,7 +164,7 @@ utf8_string* string_from(char* SourcePtr){
 
 
     
-    free(SourcePtr);
+    // free(SourcePtr);
     return CreatedString;
 }
 
