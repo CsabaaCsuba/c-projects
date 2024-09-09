@@ -1,42 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include "utf8.h"
 
-bool is_valid_raw(char* RawString, int StringLen){
-    for(int i=0; i<StringLen;i++){
-        if ((unsigned char)RawString[i] >> 3 == 30){
-            if (i+3 > StringLen)
-                    return false;
-            for (int j=1; j<4; j++){
-                if ((unsigned char)RawString[i+j] >> 6 != 2)
-                    return false;
-            }
-            i+=3;
-        }
-        else if ((unsigned char)RawString[i] >> 4 == 14){
-            if (i+2 > StringLen)
-                    return false;
-            for (int j=1; j<3; j++){
-                if ((unsigned char)RawString[i+j] >> 6 != 2)
-                    return false;
-            }
-            i+=2;
-        }
-        else if ((unsigned char)RawString[i] >> 5 == 6){
-            i+=1;
-            if (i > StringLen)
-                return false;
-            if ((unsigned char)RawString[i] >> 6 != 2)
-                    return false;
-        }
 
-        else if ((unsigned char)RawString[i] >> 7 == 0){
-        } 
-        else return false;
-    }
-
-    return true;
-}
 
 int main(){
     char InvalidString[] = "\xf0\x28\x8c\x28";
@@ -44,5 +12,39 @@ int main(){
 
     char ValidString[] = "𐌼";
     printf("validator returned: %d\n", is_valid_raw((char*)&ValidString, strlen(ValidString)));
+    
+    
+    utf8_string MyString;
+    if (init_utf8_string(&MyString) == NULL){
+        printf("utf8 string initialization failed.\n");
+        return -1;
+    }
+    append_to_str(&MyString, "Halohalo");
+    append_to_str(&MyString, "bruh");
+
+    printf("current string: %s\n", MyString.RawStrPtr);
+    
+    
+    utf8_string* MyStringPtr2 = string_from("hiiii");
+    printf("string 2: %s\n", MyStringPtr2->RawStrPtr);
+
+    // char* fasz = "す";
+    printf("Codepoint count: %d\n", get_codepoint_count_raw("ŰŐすa", strlen("ŰŐすa")));
+
+    utf8_string InputString;
+    init_utf8_string(&InputString);
+    char input_buff[BUFSIZ];
+
+    while (1 == 1){
+        scanf("%512s", input_buff);
+        if (strcmp((char*)&input_buff, "n") == 0){
+            break;
+        }
+        append_to_str(&InputString, (char*)&input_buff);
+    }
+    printf("Input string at the end: %s\n", InputString.RawStrPtr);
+
+    free_utf8_string(MyStringPtr2);
+
     return 0;
 }
