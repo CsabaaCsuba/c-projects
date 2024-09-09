@@ -19,7 +19,7 @@ int main(){
     printf("Json's third row values: %s\n", (char*)ThirdRow->ValuePtr+6);
 
 
-    Json* Json1 = init_json(ThirdRow);
+    Json* Json1 = init_json(SecondRow);
     printf("Json's key count: %d\n", Json1->len);
     printf("Json's value count: %d\n", Json1->JsonRowPtr->len);
 

@@ -18,7 +18,13 @@ typedef struct {
     JsonRow* JsonRowPtr;
 } Json;
 
+// typedef struct {
+//     int len;
+//     char* ptr;
+// }
+
 JsonRow* init_row(char* InputKeyPtr, void* InputValuePtr, TYPE InputType, int ValuesLength){
+    //TODO: make the input value Ptr a list of pointers.
     if (InputKeyPtr == NULL || InputValuePtr == NULL || InputType > 3){
         printf("Null pointers received or InputType is incorrect value.\n");
         return NULL;
@@ -57,7 +63,11 @@ JsonRow* init_row(char* InputKeyPtr, void* InputValuePtr, TYPE InputType, int Va
         InputTypesSize = 8; //a double takes up 8 bytes
     }
     else if (InputType == STRING){
-        InputTypesSize = strlen(InputValuePtr)+1; //account for null-byte
+        InputTypesSize = sizeof(char*);
+        //TODO: the problem is here, a 2d matrix have to be produced.
+        char** 
+        InputValuePtr = 
+        // InputTypesSize = strlen(InputValuePtr)+1; //account for null-byte
         /*because valueslength should be the actual number of separate strings,
         the inputtypesize should be the length of one individual string
         */
@@ -165,92 +175,95 @@ char* realloc_string_based_on_value_type(char* MainStrPtr, JsonRow* JsonRowPtr, 
     int main_str_len = strlen(MainStrPtr);
     char* NewPtr;
     int num_length = 0;
-    switch (JsonRowPtr->type){
-        case INT:
-            int num = *(int*)(JsonRowPtr->ValuePtr);
-            printf("number found: %d\n", num);
-            
-            //TODO: test the ceil thing
-            num_length = (int)((ceil(log10(num))+1)*sizeof(char));
-            NewPtr = realloc(MainStrPtr, main_str_len+num_length+1);
-            if (NewPtr == NULL){
+    for (int i=0; i<JsonRowPtr->len; i++){
+        switch (JsonRowPtr->type){
+            case INT:
+                int num = (int)((int*)JsonRowPtr->ValuePtr)[i];
+                printf("number found: %d\n", num);
+                
+                //TODO: test the ceil thing
+                num_length = (int)((ceil(log10(num))+1)*sizeof(char));
+                NewPtr = realloc(MainStrPtr, main_str_len+num_length+1);
+                if (NewPtr == NULL){
+                    free(MainStrPtr);
+                    return NULL;
+                }
+                MainStrPtr = NewPtr;
+
+                //copy number into the continuation of the string pointer, and place null byte
+                sprintf(NewPtr+main_str_len, "%d", num);
+                NewPtr[main_str_len+num_length] = '\0';
+
+                // printf("String currently:%s\n", NewPtr);
+
+                
+                break;
+            case DOUBLE:
+                double double_num = (double)((double*)JsonRowPtr->ValuePtr)[i];
+                printf("non-whole number found: %lf\n", double_num);
+
+                num_length = snprintf(NULL, 0, "%lf", double_num);
+                
+                NewPtr = realloc(MainStrPtr, main_str_len+num_length+1);
+                if (NewPtr == NULL){
+                    free(MainStrPtr);
+                    return NULL;
+                }
+                MainStrPtr = NewPtr;
+
+                //copy number into the continuation of the string pointer, and place null byte
+                sprintf(MainStrPtr+main_str_len, "%lf", double_num);
+                MainStrPtr[main_str_len+num_length] = '\0';
+
+                // printf("String currently:%s\n", NewPtr);
+
+    
+                break;
+            case STRING: //TODO: test this
+                char* StringFromJson = (char*)((char**)JsonRowPtr->ValuePtr)[i];
+                printf("String value found: %s\n", StringFromJson);
+
+                int string_length = strlen(StringFromJson);
+
+                NewPtr = realloc(MainStrPtr, main_str_len+string_length+1);
+                if (NewPtr == NULL){
+                    free(MainStrPtr);
+                    return NULL;
+                }
+                MainStrPtr = NewPtr;
+
+                //copy string and place null byte.
+                strncpy(MainStrPtr+main_str_len, StringFromJson, string_length);
+                *(MainStrPtr+main_str_len+string_length) = '\0';
+
+                // printf("String currently:%s\n", NewPtr);
+                break;
+            case JSON:
+                Json InsideJson = ((Json*)JsonRowPtr->ValuePtr)[i];
+                if (do_pointers_exist(&InsideJson) == 0){ //if there is a valid json pointer with valid json row inside the string
+                    return NULL;
+                }
+
+
+                char* NestedJsonPtr = (char*)stringify_json((Json*)JsonRowPtr->ValuePtr, JsonLevel);
+                if (NestedJsonPtr == NULL){
+                    free(MainStrPtr);
+                    return NULL;
+                }
+                // MainStrPtr = NewPtr; //this line is wrong, it deletes the previous values of the json, and sets it to the inner json only.
+                MainStrPtr = extend_with_chars(MainStrPtr, NestedJsonPtr);
+                if (MainStrPtr == NULL){
+                    return NULL;
+                }
+
+                break;
+            default:
                 free(MainStrPtr);
-                return NULL;
-            }
-            MainStrPtr = NewPtr;
-
-            //copy number into the continuation of the string pointer, and place null byte
-            sprintf(NewPtr+main_str_len, "%d", num);
-            NewPtr[main_str_len+num_length] = '\0';
-
-            // printf("String currently:%s\n", NewPtr);
-
-            
-            break;
-        case DOUBLE:
-            double double_num = *(double*)(JsonRowPtr->ValuePtr);
-            printf("non-whole number found: %lf\n", double_num);
-
-            num_length = snprintf(NULL, 0, "%lf", double_num);
-            
-            NewPtr = realloc(MainStrPtr, main_str_len+num_length+1);
-            if (NewPtr == NULL){
-                free(MainStrPtr);
-                return NULL;
-            }
-            MainStrPtr = NewPtr;
-
-            //copy number into the continuation of the string pointer, and place null byte
-            sprintf(MainStrPtr+main_str_len, "%lf", double_num);
-            MainStrPtr[main_str_len+num_length] = '\0';
-
-            // printf("String currently:%s\n", NewPtr);
-
- 
-            break;
-        case STRING: //TODO: test this
-            char* StringFromJson = (char*)JsonRowPtr->ValuePtr;
-            printf("String value found: %s\n", StringFromJson);
-
-            int string_length = strlen(StringFromJson);
-
-            NewPtr = realloc(MainStrPtr, main_str_len+string_length+1);
-            if (NewPtr == NULL){
-                free(MainStrPtr);
-                return NULL;
-            }
-            MainStrPtr = NewPtr;
-
-            //copy string and place null byte.
-            strncpy(MainStrPtr+main_str_len, StringFromJson, string_length);
-            *(MainStrPtr+main_str_len+string_length) = '\0';
-
-            // printf("String currently:%s\n", NewPtr);
-            break;
-        case JSON:
-            if (do_pointers_exist((Json*)JsonRowPtr->ValuePtr) == 0){ //if there is a valid json pointer with valid json row inside the string
-                return NULL;
-            }
-
-
-            char* NestedJsonPtr = (char*)stringify_json((Json*)JsonRowPtr->ValuePtr, JsonLevel);
-            if (NestedJsonPtr == NULL){
-                free(MainStrPtr);
-                return NULL;
-            }
-            // MainStrPtr = NewPtr; //this line is wrong, it deletes the previous values of the json, and sets it to the inner json only.
-            MainStrPtr = extend_with_chars(MainStrPtr, NestedJsonPtr);
-            if (MainStrPtr == NULL){
-                return NULL;
-            }
-
-            break;
-        default:
-            free(MainStrPtr);
-            NewPtr = NULL;
-            MainStrPtr = NULL;
-            printf("default case reached\n");
-            break;
+                NewPtr = NULL;
+                MainStrPtr = NULL;
+                printf("default case reached\n");
+                break;
+        }
     }
 
     return MainStrPtr;
