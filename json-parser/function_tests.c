@@ -27,7 +27,7 @@ int main(){
     char* newdata = malloc(2);
     newdata[0] = 'o';
     newdata[1] = '\0';
-    printf("%s\n", add_key_to_string(my_char_arr, ThirdRow));
+    printf("%s\n", add_key_to_string(newdata, ThirdRow));
 
 
 }

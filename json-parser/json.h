@@ -210,7 +210,7 @@ char* realloc_string_based_on_value_type(char* MainStrPtr, JsonRow* JsonRowPtr){
 char* add_key_to_string(char* MainStrPtr, JsonRow* JsonRowPtr){
     printf("function started.\n");
     if (JsonRowPtr == NULL || JsonRowPtr->KeyPtr == NULL){
-        printf
+        printf("pointers are null.\n");
         return NULL;
     }
     int key_length = strlen(JsonRowPtr->KeyPtr);
@@ -224,8 +224,6 @@ char* add_key_to_string(char* MainStrPtr, JsonRow* JsonRowPtr){
 
     strncpy(NewPtr+str_length, JsonRowPtr->KeyPtr, key_length);
     NewPtr[str_length+key_length] = '\0'; //add null byte 
-    
-    printf("New string: %s", NewPtr);
 
     return NewPtr;
 
