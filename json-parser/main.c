@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "json.h"
 
 int main(){
@@ -15,25 +16,39 @@ int main(){
 
     char MyStrArr[2][6] = {"hallo", "hallo"};
     JsonRow* ThirdRow = init_row("stringlist", &MyStrArr, STRING, 2);
-    printf("Json's third row values: %s", (char*)ThirdRow->ValuePtr+6);
+    printf("Json's third row values: %s\n", (char*)ThirdRow->ValuePtr+6);
 
 
     Json* Json1 = init_json(ThirdRow);
     printf("Json's key count: %d\n", Json1->len);
     printf("Json's value count: %d\n", Json1->JsonRowPtr->len);
 
+    int dataN2 = 3;
+    JsonRow* RowX = init_row("data", &dataN2, INT, 1);
+
+    printf("%p\n", add_to_json(Json1, RowX));
+
     JsonRow* FourthRow = init_row("jsondata", Json1, JSON, 1);
     
     printf("Fourth row's json data: %s\n", (char*)((Json*)(FourthRow->ValuePtr))->JsonRowPtr->ValuePtr);
 
-    Json* Json2 = init_json(FourthRow);
-    printf("Json's json value's first value: %s\n", (char*)((Json*)Json2->JsonRowPtr->ValuePtr)->JsonRowPtr->ValuePtr);
+    Json* Json2 = init_json(FirstRow);
+    // printf("Json's json value's first value: %s\n", (char*)((Json*)Json2->JsonRowPtr->ValuePtr)->JsonRowPtr->ValuePtr);
 
-    add_to_json(Json2, FirstRow);
+    add_to_json(Json2, FourthRow);
 
-    printf("Second json's second keys' value: %d\n", *(int*)Json2->JsonRowPtr[1].ValuePtr);
+    char* justastring= "I_can't_believe_this";
+    JsonRow* FifthRow = init_row("third-key", justastring, STRING, 1);
 
-    printf("Keys: %s\n", get_keys(Json2)[0]);
+    add_to_json(Json2, FifthRow);
+
+    // printf("Second json's second keys' value: %d\n", *(int*)Json2->JsonRowPtr[1].ValuePtr);
+
+    // printf("Keys: %s\n", get_keys(Json2)[0]);
+
+    // printf("Json stringified: %s", stringify_json(Json1));
+
+    printf("Second Json stringified: \n%s\n", stringify_json(Json2, 0));
 
     return 0;
 }
