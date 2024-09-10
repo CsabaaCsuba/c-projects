@@ -1,6 +1,8 @@
 #ifndef Json
     #include "json.h"
 #endif
+#include <stdlib.h>
+#include <stdio.h>
 
 /*
 JSON rules:
@@ -19,10 +21,37 @@ EXTRA:
 
 */
 
-Json* read_json(Json* JsonPtr){
+// Json** parse_json_list(char* RawJsonPtr){
+
+// }
+
+// Json* parse_json(char* RawJsonPtr){
+
+// }
+
+Json** read_raw_string(char* RawJsonPtr){ //returns an array of JSON pointers
+    int is_in_list = 0;
+    int RawStringLen = strlen(RawJsonPtr);
+    Json** JsonFormat = (Json**)calloc(sizeof(Json*), 1);
+
+    if (RawJsonPtr[0] == '['){
+        printf("The whole thing is a list.\n");
+        is_in_list = 1;
+    }
+    else if (RawJsonPtr[0] == '{'){
+        printf("The whole thing is inside a json.\n");
+    }
+    else {
+        printf("this thing cannot even be parsed.\n");
+    }
     
+    for (int i=0; i<RawStringLen; i++){
+
+    }
+
+    return JsonFormat;
 }
 
-Json* read_response(Json* JsonPtr){
+// Json* read_response(Json* JsonPtr){
 
-}
+// }

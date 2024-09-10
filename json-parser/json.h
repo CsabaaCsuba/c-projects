@@ -4,11 +4,12 @@ typedef enum {
     DOUBLE,
     STRING,
     JSON,
+    BOOL,
 } TYPE;
 
 typedef struct {
     char* KeyPtr; //only one string value is allowed here.
-    void* ValuePtr; //can be a list
+    void** ValuePtr; //can be a list
     int len; //length of the list
     TYPE type;
 } JsonRow;
@@ -23,10 +24,13 @@ typedef struct {
 //     char* ptr;
 // }
 
-JsonRow* init_row(char* InputKeyPtr, void* InputValuePtr, TYPE InputType, int ValuesLength){
+
+//constructs a pointer to an array of pointers. The "ValuesLength" variable specifies the length of the variables.
+JsonRow* init_row(char* InputKeyPtr, void** InputValuePtr, TYPE InputType, int ValuesLength){
     //TODO: make the input value Ptr a list of pointers.
-    if (InputKeyPtr == NULL || InputValuePtr == NULL || InputType > 3){
+    if (InputKeyPtr == NULL || InputValuePtr == NULL || InputValuePtr[0] == NULL || InputType > 4){
         printf("Null pointers received or InputType is incorrect value.\n");
+        printf("InputKeyPtr: %p\nInputValuePtr:%p\nType:%d\nValuesLength:%d\n", InputKeyPtr, InputValuePtr, InputType, ValuesLength);
         return NULL;
     }
 
@@ -57,23 +61,30 @@ JsonRow* init_row(char* InputKeyPtr, void* InputValuePtr, TYPE InputType, int Va
     //allocating space for the input values
     int InputTypesSize;
     if (InputType == INT){
-        InputTypesSize = 4;
+        InputTypesSize = sizeof(int*);
     }
     else if (InputType == DOUBLE){
-        InputTypesSize = 8; //a double takes up 8 bytes
+        InputTypesSize = sizeof(double*); //a double takes up 8 bytes
     }
     else if (InputType == STRING){
         InputTypesSize = sizeof(char*);
         //TODO: the problem is here, a 2d matrix have to be produced.
-        char** 
-        InputValuePtr = 
+        // char** 
+        // InputValuePtr = 
         // InputTypesSize = strlen(InputValuePtr)+1; //account for null-byte
         /*because valueslength should be the actual number of separate strings,
         the inputtypesize should be the length of one individual string
         */
     }
+    else if (InputType == JSON){
+        InputTypesSize = sizeof(Json*);
+    }
+    else if (InputType == BOOL){
+        InputTypesSize = sizeof(int*);
+    }
     else {
-        InputTypesSize = sizeof(Json);
+        printf("type is a non-existent value");
+        return NULL;
     }
 
     CreatedJsonRow->len = ValuesLength;
@@ -144,10 +155,15 @@ Json* add_to_json(Json* JsonPtr, JsonRow* RowPtr){
 
 char* stringify_json(Json* JsonPtr, int JsonLevel);
 
-int do_pointers_exist(Json* JsonPtr){
+int do_pointers_exist(Json* JsonPtr){ //check if json has at least one existing value.
     if (JsonPtr != NULL){
-        if (JsonPtr->JsonRowPtr != NULL){
-            return 1;
+        printf("check is good\n");
+        printf("%p\n", JsonPtr->JsonRowPtr);
+        if ((JsonPtr->JsonRowPtr) != NULL){
+            printf("check is still good.\n");
+            if (JsonPtr->JsonRowPtr->ValuePtr != NULL){
+                return 1;
+            }
         }
     }
     return 0;
@@ -172,34 +188,54 @@ char* extend_with_chars(char* MainStrPtr, char* ExtendChar){
 }
 
 char* realloc_string_based_on_value_type(char* MainStrPtr, JsonRow* JsonRowPtr, int JsonLevel){
-    int main_str_len = strlen(MainStrPtr);
+    
     char* NewPtr;
     int num_length = 0;
+    int IsList;
+    (JsonRowPtr->len > 1) ? (IsList = 1) : (IsList = 0);
+
+    if (IsList == 1){
+        MainStrPtr = extend_with_chars(MainStrPtr, "[");
+        if (MainStrPtr == NULL){
+            printf("adding square brackets failed.\n");
+            return NULL;
+        }
+        else
+            printf("square brackets added... String RN: %s\n", MainStrPtr);
+    }
+
+    int main_str_len;
     for (int i=0; i<JsonRowPtr->len; i++){
+        main_str_len = strlen(MainStrPtr);
         switch (JsonRowPtr->type){
             case INT:
-                int num = (int)((int*)JsonRowPtr->ValuePtr)[i];
+                printf("int case detected. Current key: %s\n", JsonRowPtr->KeyPtr);
+                int num = *(int*)JsonRowPtr->ValuePtr[i];
                 printf("number found: %d\n", num);
                 
                 //TODO: test the ceil thing
                 num_length = (int)((ceil(log10(num))+1)*sizeof(char));
-                NewPtr = realloc(MainStrPtr, main_str_len+num_length+1);
-                if (NewPtr == NULL){
+                MainStrPtr = realloc(MainStrPtr, main_str_len+num_length+1);
+                if (MainStrPtr == NULL){
                     free(MainStrPtr);
                     return NULL;
                 }
-                MainStrPtr = NewPtr;
+                // MainStrPtr = NewPtr;
 
                 //copy number into the continuation of the string pointer, and place null byte
-                sprintf(NewPtr+main_str_len, "%d", num);
-                NewPtr[main_str_len+num_length] = '\0';
+                sprintf(MainStrPtr+main_str_len, "%d", num);
+                MainStrPtr[main_str_len+num_length] = '\0';
+
+                
+                // free(NewPtr);
 
                 // printf("String currently:%s\n", NewPtr);
 
                 
                 break;
             case DOUBLE:
-                double double_num = (double)((double*)JsonRowPtr->ValuePtr)[i];
+                printf("double case detected.\n");
+                double double_num = *(double*)JsonRowPtr->ValuePtr[i];
                 printf("non-whole number found: %lf\n", double_num);
 
                 num_length = snprintf(NULL, 0, "%lf", double_num);
@@ -220,7 +256,14 @@ char* realloc_string_based_on_value_type(char* MainStrPtr, JsonRow* JsonRowPtr, 
     
                 break;
             case STRING: //TODO: test this
-                char* StringFromJson = (char*)((char**)JsonRowPtr->ValuePtr)[i];
+                MainStrPtr = extend_with_chars(MainStrPtr, "\"");
+                if (MainStrPtr == NULL){
+                    return NULL;
+                }
+                main_str_len++; //since it's usually incremented outside, it's necessary to increment it after adding the quotation mark here.
+
+                printf("string case detected.\n");
+                char* StringFromJson = (char*)JsonRowPtr->ValuePtr[i];
                 printf("String value found: %s\n", StringFromJson);
 
                 int string_length = strlen(StringFromJson);
@@ -236,25 +279,67 @@ char* realloc_string_based_on_value_type(char* MainStrPtr, JsonRow* JsonRowPtr, 
                 strncpy(MainStrPtr+main_str_len, StringFromJson, string_length);
                 *(MainStrPtr+main_str_len+string_length) = '\0';
 
-                // printf("String currently:%s\n", NewPtr);
-                break;
-            case JSON:
-                Json InsideJson = ((Json*)JsonRowPtr->ValuePtr)[i];
-                if (do_pointers_exist(&InsideJson) == 0){ //if there is a valid json pointer with valid json row inside the string
+                MainStrPtr = extend_with_chars(MainStrPtr, "\"");
+                if (MainStrPtr == NULL){
                     return NULL;
                 }
 
+                // printf("String currently:%s\n", NewPtr);
+                break;
+            case JSON:
+                printf("json case detected.\n");
+                Json* InsideJson = (Json*)JsonRowPtr->ValuePtr[i];
+                printf("didn't segfault. Inside Json's first row: %p\n", InsideJson->JsonRowPtr);
+                // if (do_pointers_exist(InsideJson) == 0){ //if there is a valid json pointer with valid json row inside the string
+                //     printf("some pointers are null.\n");
+                //     return NULL;
+                // }
 
-                char* NestedJsonPtr = (char*)stringify_json((Json*)JsonRowPtr->ValuePtr, JsonLevel);
+                printf("pointers exist.\n");
+                char* NestedJsonPtr = (char*)stringify_json(InsideJson, JsonLevel);
                 if (NestedJsonPtr == NULL){
                     free(MainStrPtr);
                     return NULL;
                 }
+                printf("still didn't segfault\n");
                 // MainStrPtr = NewPtr; //this line is wrong, it deletes the previous values of the json, and sets it to the inner json only.
                 MainStrPtr = extend_with_chars(MainStrPtr, NestedJsonPtr);
                 if (MainStrPtr == NULL){
                     return NULL;
                 }
+
+                break;
+            case BOOL:
+                //TODO: test this
+                int bool_value = *(int*)JsonRowPtr->ValuePtr[i];
+                printf("bool value: %d", bool_value);
+                char* WrittenValuePtr;
+                
+                if (bool_value > 0){ //if true
+                    NewPtr = realloc(MainStrPtr, main_str_len+5);
+                    WrittenValuePtr = calloc(5, 1);
+                    if (NewPtr == NULL || WrittenValuePtr == NULL){
+                        return NULL;
+                    }
+
+                    strcpy(WrittenValuePtr, "true");
+                }
+                else { //if false
+                    NewPtr = realloc(MainStrPtr, main_str_len+6);
+                    WrittenValuePtr = calloc(6, 1);
+                    if (NewPtr == NULL || WrittenValuePtr == NULL){
+                        return NULL;
+                    }
+
+                    strcpy(WrittenValuePtr, "false");
+                }
+
+                MainStrPtr = NewPtr;
+
+                //extend main ptr
+                strcpy(MainStrPtr+main_str_len, WrittenValuePtr);
+
+                free(WrittenValuePtr);
 
                 break;
             default:
@@ -263,6 +348,21 @@ char* realloc_string_based_on_value_type(char* MainStrPtr, JsonRow* JsonRowPtr, 
                 MainStrPtr = NULL;
                 printf("default case reached\n");
                 break;
+        }
+        if (IsList == 1 && i != JsonRowPtr->len-1){
+            MainStrPtr = extend_with_chars(MainStrPtr, ", ");
+            if (MainStrPtr == NULL){
+                printf("main string extension failed.\n");
+                return NULL;
+            }
+        }
+    }
+
+    if (IsList == 1){
+        MainStrPtr = extend_with_chars(MainStrPtr, "]");
+        if (MainStrPtr == NULL){
+            printf("main string extension failed.\n");
+            return NULL;
         }
     }
 
@@ -275,9 +375,17 @@ char* add_key_to_string(char* MainStrPtr, JsonRow* JsonRowPtr){
         printf("pointers are null.\n");
         return NULL;
     }
+
+    MainStrPtr = extend_with_chars(MainStrPtr, "\"");
+    if (MainStrPtr == NULL){
+        return NULL;
+    }
+
     int key_length = strlen(JsonRowPtr->KeyPtr);
     int str_length = strlen(MainStrPtr);
     printf("strlen done. \n");
+    
+
     char* NewPtr = realloc(MainStrPtr, key_length+str_length+1);
     printf("realloc ran\n");
     if (NewPtr == NULL){
@@ -285,7 +393,13 @@ char* add_key_to_string(char* MainStrPtr, JsonRow* JsonRowPtr){
     }
 
     strncpy(NewPtr+str_length, JsonRowPtr->KeyPtr, key_length);
-    NewPtr[str_length+key_length] = '\0'; //add null byte 
+    NewPtr[str_length+key_length] = '\0'; //add null byte
+
+    NewPtr = extend_with_chars(NewPtr, "\"");
+    if (NewPtr == NULL){
+        return NULL;
+    }
+
 
     return NewPtr;
 
