@@ -18,7 +18,7 @@ typedef struct {
     // void** ValuePtr; //can be a list
     int len; //length of the list
     // TYPE type;
-    JsonValue* JsonValues; //This can be a list now
+    JsonValue* JsonValuesListPtr; //This can be a list now
 } JsonRow;
 
 typedef struct {
@@ -35,7 +35,7 @@ typedef struct {
 //constructs a pointer to an array of pointers. The "ValuesLength" variable specifies the length of the variables.
 JsonRow* init_row(char* InputKeyPtr, void** InputValuePtr, TYPE InputType, int ValuesLength){
     //TODO: make the input value Ptr a list of pointers.
-    if (InputKeyPtr == NULL || InputValuePtr == NULL || InputValuePtr[0] == NULL || InputType > 4){
+    if (InputKeyPtr == NULL || InputValuePtr == NULL || InputValuePtr[0] == NULL || InputType > 5){
         printf("Null pointers received or InputType is incorrect value.\n");
         printf("InputKeyPtr: %p\nInputValuePtr:%p\nType:%d\nValuesLength:%d\n", InputKeyPtr, InputValuePtr, InputType, ValuesLength);
         return NULL;

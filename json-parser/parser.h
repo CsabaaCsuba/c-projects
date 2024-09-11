@@ -65,7 +65,7 @@ Json** read_raw_string(char* RawJsonPtr, char delimiter){ //returns an array of 
             
             printf("String is imminent.\n");
         }
-        else if (RawJsonPtr[i] == ' ' || RawJsonPtr[i] == '\n' || RawJsonPtr[i] == "\r"){
+        else if (RawJsonPtr[i] == ' ' || RawJsonPtr[i] == '\n' || RawJsonPtr[i] == '\r'){
             continue;
         }
         else {
