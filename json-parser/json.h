@@ -5,13 +5,20 @@ typedef enum {
     STRING,
     JSON,
     BOOL,
+    LIST //not implemented yet
 } TYPE;
 
 typedef struct {
-    char* KeyPtr; //only one string value is allowed here.
-    void** ValuePtr; //can be a list
-    int len; //length of the list
+    void* ValuePtr;
     TYPE type;
+} JsonValue;
+
+typedef struct {
+    char* KeyPtr; //only one string value is allowed here.
+    // void** ValuePtr; //can be a list
+    int len; //length of the list
+    // TYPE type;
+    JsonValue* JsonValues; //This can be a list now
 } JsonRow;
 
 typedef struct {

@@ -29,24 +29,48 @@ EXTRA:
 
 // }
 
-Json** read_raw_string(char* RawJsonPtr){ //returns an array of JSON pointers
+enum TOKEN_TYPE {
+    INT,
+    DOUBLE,
+    STRING,
+    JSON,
+    BOOL,
+    LIST
+}
+
+void** read_list(char* RawStringPtr, Json* CurrentJsonPtr){
+
+}
+
+Json** read_raw_string(char* RawJsonPtr, char delimiter){ //returns an array of JSON pointers
     int is_in_list = 0;
+    int is_value_next = 0;
     int RawStringLen = strlen(RawJsonPtr);
     Json** JsonFormat = (Json**)calloc(sizeof(Json*), 1);
 
-    if (RawJsonPtr[0] == '['){
-        printf("The whole thing is a list.\n");
-        is_in_list = 1;
-    }
-    else if (RawJsonPtr[0] == '{'){
-        printf("The whole thing is inside a json.\n");
-    }
-    else {
-        printf("this thing cannot even be parsed.\n");
-    }
     
-    for (int i=0; i<RawStringLen; i++){
-
+    
+    for (int i=0; RawJsonPtr[i] != delimiter; i++){
+        if (is_value_next == 1){
+                
+        }
+        if (RawJsonPtr[i] == '['){
+            printf("The whole thing is a list.\n");
+            is_in_list = 1;
+        }
+        else if (RawJsonPtr[i] == '{'){
+            printf("The whole thing is inside a json.\n");
+        }
+        else if (RawJsonPtr[i] == '"'){
+            
+            printf("String is imminent.\n");
+        }
+        else if (RawJsonPtr[i] == ' ' || RawJsonPtr[i] == '\n' || RawJsonPtr[i] == "\r"){
+            continue;
+        }
+        else {
+            printf("this thing cannot even be parsed.\n");
+        }
     }
 
     return JsonFormat;

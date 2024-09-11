@@ -16,7 +16,7 @@ int main(){
         } \
     }";
 
-    read_raw_string(current_str);
+    read_raw_string(current_str, '\0');
 
     return 0;
 }
