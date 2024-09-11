@@ -32,6 +32,8 @@ int main(){
     ValueArray[1] = *SecondVal;
     ValueArray[2] = *ThirdVal;
 
+    printf("Value of the first array element: %s\n", (char*)ValueArray[0].ValuePtr);
     printf("Value of the second array element: %d\n", *(int*)ValueArray[1].ValuePtr);
+    printf("Value of the third array element: %lf\n", *(double*)ValueArray[2].ValuePtr);
 
 }
