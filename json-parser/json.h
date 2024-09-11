@@ -5,7 +5,7 @@ typedef enum {
     STRING,
     JSON,
     BOOL,
-    LIST //not implemented yet
+    // LIST //not implemented yet
 } TYPE;
 
 typedef struct {
@@ -30,6 +30,48 @@ typedef struct {
 //     int len;
 //     char* ptr;
 // }
+
+
+//constructs a json value pointer, which has a void pointer to any singular value
+JsonValue* init_json_value(void* InputValue, TYPE InputType){
+    if (InputValue == NULL || InputType > 5){
+        printf("input value pointer was null or the input type was incorrect.\n");
+        return NULL;
+    }
+    JsonValue* CreatedJsonVal = malloc(sizeof(JsonValue));
+    CreatedJsonVal->type = InputType;
+
+    int single_data_size;
+
+    if (InputType == INT){
+        single_data_size = sizeof(int);
+    }
+    if (InputType == DOUBLE){
+        single_data_size = sizeof(double);
+    }
+    if (InputType == STRING){
+        single_data_size = strlen((char*)InputValue)+1;
+    }
+    if (InputType == JSON){
+        single_data_size = sizeof(Json);
+    }
+    if (InputType == BOOL){
+        single_data_size = sizeof(int); //gotta store it as int to reduce complexity
+    }
+
+    void* NewMemSpace = malloc(single_data_size);
+    if (NewMemSpace == NULL){
+        printf("malloc failed\n");
+        return NULL;
+    }
+
+    memcpy(NewMemSpace, InputValue, single_data_size);
+    CreatedJsonVal->ValuePtr = NewMemSpace;
+
+    return CreatedJsonVal;
+
+}
+
 
 
 //constructs a pointer to an array of pointers. The "ValuesLength" variable specifies the length of the variables.

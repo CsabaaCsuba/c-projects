@@ -2,32 +2,36 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "json.h"
+#include <string.h>
+#include "rfc_8259_json.h"
 
 int main(){
-    int datanum = 2;
-    JsonRow* FirstRow = init_row("data", &datanum, INT, 1);
-    printf("Json row's value: %d\n", *(int*)(FirstRow->ValuePtr));
-    printf("json's key: %s\n", FirstRow->KeyPtr);
+    JsonValue* FirstVal = init_json_value("miners", STRING);
+    printf("type of the first value: %d\nand value: %s\n", FirstVal->type, (char*)FirstVal->ValuePtr);
 
-    
-    char* bruh = malloc(2);
-    bruh[0] = '{';
-    bruh[1] = '\0';
-    realloc_string_based_on_value_type(bruh, FirstRow);
-    printf("ran\n");
+    int randomnum1 = 10;
+    JsonValue* SecondVal = init_json_value(&randomnum1, INT);
+    printf("type of the second value: %d\nand value: %d\n", SecondVal->type, *(int*)SecondVal->ValuePtr);
 
-    double float_data = 44.8797;
-    JsonRow* SecondRow = init_row("float-data", &float_data, DOUBLE, 1);
-    realloc_string_based_on_value_type(bruh, SecondRow);
+    double randomnum2 = 6.9;
+    JsonValue* ThirdVal = init_json_value(&randomnum2, DOUBLE);
+    printf("type of the second value: %d\nand value: %.2f\n", ThirdVal->type, *(double*)ThirdVal->ValuePtr);
 
 
-    char* my_char_arr = "halohalo";
-    JsonRow* ThirdRow = init_row("string-data", my_char_arr, STRING, 1);
-    char* newdata = malloc(2);
-    newdata[0] = 'o';
-    newdata[1] = '\0';
-    printf("%s\n", add_key_to_string(newdata, ThirdRow));
+    int randombool = 1;
+    JsonValue* FourthVal = init_json_value(&randombool, BOOL);
+    printf("type of the second value: %d\nand value: %.2d\n", FourthVal->type, *(int*)FourthVal->ValuePtr);
 
+
+    JsonRow* FirstRow = init_row("key1", FirstVal, 1);
+    printf("First Row length: %d,\nkey:%s,\nvalue:%s\n", FirstRow->len, FirstRow->KeyPtr, (char*)FirstRow->JsonValuesListPtr->ValuePtr);
+
+
+    JsonValue* ValueArray = malloc(sizeof(JsonValue)*3);
+    ValueArray[0] = *FirstVal;
+    ValueArray[1] = *SecondVal;
+    ValueArray[2] = *ThirdVal;
+
+    printf("Value of the second array element: %d\n", *(int*)ValueArray[1].ValuePtr);
 
 }
