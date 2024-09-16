@@ -36,4 +36,21 @@ int main(){
     printf("Value of the second array element: %d\n", *(int*)ValueArray[1].ValuePtr);
     printf("Value of the third array element: %lf\n", *(double*)ValueArray[2].ValuePtr);
 
+
+    Json* FirstJSON = init_json_from(FirstRow, 1);
+    printf("Value of the first json's first row's key: %s\n", (char*)FirstJSON->JsonRowPtr->JsonValuesListPtr->ValuePtr);
+    printf("First json's first key: %s\n", FirstJSON->JsonRowPtr[0].KeyPtr);
+
+    
+
+    JsonRow* SecondRow = init_row("boolkey", FourthVal, 1);
+
+    add_row_to_json(FirstJSON, *SecondRow);
+
+    printf("First json's second key: %s\n", FirstJSON->JsonRowPtr[1].KeyPtr);
+
+    printf("Json as string: \n%s\n", stringify_json(FirstJSON, 0));
+
+    //TODO: write more tests for existing functions
+    // + write string-to-json converter
 }
