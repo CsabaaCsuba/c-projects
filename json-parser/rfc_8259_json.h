@@ -438,6 +438,42 @@ char* stringify_json(Json* JsonPtr, int JsonLevel){
     return ReturnStr;
 }
 
+
+char* remove_character(char* original, char char_to_remove){
+    if (original == NULL || char_to_remove == 0){
+        return NULL;
+    }
+    int original_length = strlen(original);
+    if (original_length == 0) return NULL;
+
+    char* NewArr = malloc(original_length+1);
+    if (NewArr == NULL) return NULL;
+
+    int new_strlen = 0;
+    for (int i=0; i<original_length; i++){
+        if (original[i] == char_to_remove){
+            
+        }
+        else {
+            NewArr[new_strlen]  = original[i];
+            new_strlen++;
+        }
+    }
+    NewArr[new_strlen] = '\0';
+    NewArr = realloc(NewArr, new_strlen+1);
+    if (NewArr == NULL) return NULL;
+
+    return NewArr;
+
+}
+
+Json* tokenize_json(char* RawJsonString, int JsonStringLength){
+    if (RawJsonString == NULL || JsonStringLength < 1 || ()){
+        printf("json string invalid\n");
+        return NULL;
+    }
+}
+
 // // char* get_keys(Json* JsonPtr){
 
 // //     return "";

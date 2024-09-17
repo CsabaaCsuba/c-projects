@@ -51,6 +51,9 @@ int main(){
 
     printf("Json as string: \n%s\n", stringify_json(FirstJSON, 0));
 
+
+    printf("bruhasdasdasd without 'a': %s\n", remove_character("bruhasdasdasd", 'a'));
+
     //TODO: write more tests for existing functions
     // + write string-to-json converter
 }
