@@ -52,7 +52,13 @@ int main(){
     printf("Json as string: \n%s\n", stringify_json(FirstJSON, 0));
 
 
-    printf("bruhasdasdasd without 'a': %s\n", remove_character("bruhasdasdasd", 'a'));
+    char* string_to_remove = calloc(15, 1);
+    strcpy(string_to_remove, "bruhasdasdasd");
+    printf("bruhasdasdasd without 'a': %s\n", remove_character(string_to_remove, 'a'));
+
+    char* json_string = calloc(24, 1);
+    strcpy(json_string, "{\n\t\"factcheck\":true\n\t}");
+    printf("json pointer: %p\n", tokenize_json(json_string, 24));
 
     //TODO: write more tests for existing functions
     // + write string-to-json converter
