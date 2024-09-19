@@ -84,6 +84,12 @@ char* parse_quoted_string(char* StringPartPtr){
 */
 int increment_val = 0;
 
+//this function shifts the bytes as well.
+JsonValue* parse_primitive_value(char* CurrentStrPtr){
+
+
+}
+
 Json* parse_value(char* CurrentStrPtr){
     if (CurrentStrPtr == NULL){
         printf("String is NULL\n");
@@ -118,12 +124,32 @@ Json* parse_value(char* CurrentStrPtr){
         printf("parsed value: %s\n", parsed_value);
         shift_bytes_down(CurrentStrPtr, (parsed_value)+2); //+2 for the double quotes
         printf("Raw JSON string after parsing a string out: %s\n", CurrentStrPtr);
+
+        return NULL; //???
     }
     else if (CurrentStrPtr[0] >= 48 && CurrentStrPtr[0] <= 57){ //if the current string part points to a number
+        //TODO: pack these into the function as well.
+        char* NumEndIdx;
+        double* ParsedNumPtr = malloc(sizeof(double));
+        *ParsedNumPtr = strtod(CurrentStrPtr, &NumEndIdx);
+        printf("parsed number: %lf", *ParsedNumPtr);
+        int num_len = NumEndIdx - CurrentStrPtr;
+        shift_bytes_down(CurrentStrPtr, NumEndIdx);
+        JsonValue* JsonVal = init_json_value(ParsedNumPtr, DOUBLE);
+        if (JsonVal == NULL){return NULL;}
+        ReturnJsonPtr->JsonRowPtr = init_row(NULL, JsonVal, 1);
+        if (ReturnJsonPtr->JsonRowPtr == NULL){return NULL;}
+        ReturnJsonPtr->JsonRowPtr->JsonValuesListPtr = JsonVal;
+        ReturnJsonPtr->JsonRowPtr->KeyPtr = NULL;
+        ReturnJsonPtr->JsonRowPtr->len = 1;
+        ReturnJsonPtr->len = 1;
+
+
 
     }
     //handle boolean value
     else if (CurrentStrPtr[0] == 't' || CurrentStrPtr == 'f'){
+            //TODO: pack these into the function as well.
             int* BoolStorage = malloc(sizeof(int));
             
             JsonValue* JsonVal = init_json_value(BoolStorage, BOOL);
