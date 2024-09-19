@@ -497,25 +497,107 @@ char* parse_first_str_slice(char* StringPartPtr){
     else return NULL;
 }
 
-JsonValue* parse_list(char* CurrentStringIdx){
 
-}
 
+typedef struct {
+    JsonValue* ValuePtr;
+    int i_increment_amount;
+} JsonValue_Wrapper;
 //parses any type of value from a JSON-formatted char array
-JsonValue* parse_value(char* StringPartPtr){
+JsonValue_Wrapper* parse_value(char* StringPartPtr){
     JsonValue* NewJsonValue = malloc(sizeof(JsonValue));
+  
     if (NewJsonValue == NULL){
         printf("malloc failed.\n");
         return NULL;
     }
 
     int string_len = strlen(StringPartPtr);
-    for (int i=0; i<string_len; i++){
+    //If the value is just a string
+    if (StringPartPtr[0] == '\"'){
+        if (StringPartPtr[string_len-1] == '\"'){
+            char* ParsedValue = parse_first_str_slice(StringPartPtr);
+            if (ParsedValue == NULL) return NULL;
 
+            NewJsonValue->ValuePtr = ParsedValue;
+            NewJsonValue->type = STRING;
+            return NewJsonValue;
+        }
+        else {
+            printf("Value should be a closed string.\n");
+            return NULL;
+        }
+    }
+    //If the value is a JSON;
+    else if (StringPartPtr[0] == '{'){
+        if (StringPartPtr[string_len-1] == '}'){
+            Json* NewJsonPtr = parse_one_json(StringPartPtr);
+        }
+        else {
+            printf("Value should be a correct JSON format.\n");
+            return NULL;
+        }
     }
 
 
 }
+
+
+JsonValue* parse_list(char* CurrentStringPtr){
+
+}
+
+//parses one json
+Json* parse_one_json(char* CurrentStringPtr){
+    Json* NewJsonPtr = malloc(sizeof(Json));
+    if (NewJsonPtr == NULL){
+        printf("Malloc failed.\n");
+        return NULL;
+    }
+
+    int is_key_next = 1;
+    for (int i=0; CurrentStringPtr[i] != '}'; i++){
+        //always checks whether to Parse a key or a value
+        if (is_key_next){
+            char* KeyPtr = parse_first_str_slice(CurrentStringPtr+i);
+            if (KeyPtr == NULL) return NULL;
+            printf("received key: %s\n", KeyPtr);
+            i+=strlen(KeyPtr)+1; //make i jump forward, so the closing quotation mark is skipped too
+            
+
+            if (CurrentStringPtr[i+1] == ':'){
+                i++;
+                is_key_next = 0;
+            }
+            else {
+                printf("colon expected at index %d\n", i);
+            }
+        }
+        else {
+            JsonValue* CreatedJsonValue = parse_value(CurrentStringPtr+i); //the number we should increment i by isn't known here
+            if (CreatedJsonValue == NULL){
+                printf("parsing value failed.\n");
+                return NULL;
+            }
+
+            //detecting the length of the JSON value
+            
+
+            if (CurrentStringPtr[i+1] == ','){
+                i++;
+                is_key_next = 1;
+            }
+            else if (CurrentStringPtr[i+1] == '}'){
+
+            }
+            else {
+                printf("String formatting problems at index %d\n", i+1);
+                return NULL;
+            }
+        }
+    }
+}
+
 
 Json* tokenize_json(char* RawJsonString, int JsonStringLength){
     if (RawJsonString == NULL || JsonStringLength < 1){
