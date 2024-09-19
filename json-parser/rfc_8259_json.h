@@ -85,12 +85,12 @@ JsonValue* init_json_value(void* InputValue, TYPE InputType){
 
 //constructs a pointer to an array of pointers. The "ValuesLength" variable specifies the length of the variables.
 JsonRow* init_row(char* InputKeyPtr, JsonValue* InputValuesPtr, int ValuesLength){
-    if (InputValuesPtr == NULL || ValuesLength < 1){ //InputKeyPtr == NULL || 
-        printf("row cannot be initialized. the values length was too short, \
-        or one of the pointers is null:\n%p\n%p\n%d\n", InputKeyPtr, InputValuesPtr, ValuesLength);
+    // if (ValuesLength < 1){ //InputKeyPtr == NULL || InputValuesPtr == NULL || 
+    //     printf("row cannot be initialized. the values length was too short, \
+    //     or one of the pointers is null:\n%p\n%p\n%d\n", InputKeyPtr, InputValuesPtr, ValuesLength);
 
-        return NULL;
-    }
+    //     return NULL;
+    // }
 
     JsonRow* CreatedRowPtr = malloc(sizeof(JsonRow));
     if (CreatedRowPtr == NULL){
@@ -98,28 +98,35 @@ JsonRow* init_row(char* InputKeyPtr, JsonValue* InputValuesPtr, int ValuesLength
         return NULL;
     }
     CreatedRowPtr->len = ValuesLength;
-
-    int key_length = strlen(InputKeyPtr);
-    char* CopiedInputKey = malloc(key_length+1);
-    if (CopiedInputKey == NULL){
-        printf("malloc failed.\n");
-        return NULL;
+    if (InputKeyPtr == NULL){
+        CreatedRowPtr->KeyPtr = NULL;
     }
-    strcpy(CopiedInputKey, InputKeyPtr);
-    CopiedInputKey[key_length] = '\0';
+    else {
+        int key_length = strlen(InputKeyPtr);
+        char* CopiedInputKey = malloc(key_length+1);
+        if (CopiedInputKey == NULL){
+            printf("malloc failed.\n");
+            return NULL;
+        }
+        strcpy(CopiedInputKey, InputKeyPtr);
+        CopiedInputKey[key_length] = '\0';
 
-    CreatedRowPtr->KeyPtr = CopiedInputKey;
-
-
-    JsonValue* JsonValuesPtr = malloc(ValuesLength*sizeof(JsonValue));
-    if (JsonValuesPtr == NULL){
-        printf("malloc failed.\n");
-        return NULL;
+        CreatedRowPtr->KeyPtr = CopiedInputKey;
     }
-    memcpy(JsonValuesPtr, InputValuesPtr, ValuesLength*sizeof(JsonValue));
 
-    CreatedRowPtr->JsonValuesListPtr = JsonValuesPtr;
+    if (InputValuesPtr == NULL){
+        CreatedRowPtr->JsonValuesListPtr = NULL;
+    }
+    else {
+        JsonValue* JsonValuesPtr = malloc(ValuesLength*sizeof(JsonValue));
+        if (JsonValuesPtr == NULL){
+            printf("malloc failed.\n");
+            return NULL;
+        }
+        memcpy(JsonValuesPtr, InputValuesPtr, ValuesLength*sizeof(JsonValue));
 
+        CreatedRowPtr->JsonValuesListPtr = JsonValuesPtr;
+    }
 
     return CreatedRowPtr;
 }

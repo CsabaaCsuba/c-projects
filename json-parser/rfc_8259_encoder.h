@@ -84,11 +84,11 @@ char* parse_quoted_string(char* StringPartPtr){
 */
 int increment_val = 0;
 
-//this function shifts the bytes as well.
-JsonValue* parse_primitive_value(char* CurrentStrPtr){
+//this function shifts the bytes of the string ptr as well.
+// JsonValue* parse_primitive_value(char* CurrentStrPtr){
 
 
-}
+// }
 
 Json* parse_value(char* CurrentStrPtr){
     if (CurrentStrPtr == NULL){
@@ -96,10 +96,17 @@ Json* parse_value(char* CurrentStrPtr){
         return NULL;
     }
     Json* ReturnJsonPtr = malloc(sizeof(Json));
-    if (ReturnJsonPtr == NULL){
-        printf("JSON parsing failed.\n");
+    JsonRow* ReturnRowPtr = init_row(NULL, NULL, 0);
+    
+    if (ReturnRowPtr == NULL){
+        printf("Json row init failed.\n");
         return NULL;
     }
+    if (ReturnJsonPtr == NULL){
+        printf("Malloc failed.\n");
+        return NULL;
+    }
+    ReturnJsonPtr->JsonRowPtr = ReturnRowPtr;
 
     if (CurrentStrPtr[0] == '{'){ //the main Object is a JSON, and can have multiple rows
 
@@ -109,13 +116,30 @@ Json* parse_value(char* CurrentStrPtr){
         shift_bytes_down(CurrentStrPtr, 1);
         for (int i=0; CurrentStrPtr[i] != ']'; i++){
             Json* LocalJson = parse_value(CurrentStrPtr);
+            printf("string after shifting: %s", LocalJson);
+            //infer the type of the list's content.
+            if (LocalJson->JsonRowPtr[0].KeyPtr != NULL){ //if the list's element is an actual JSON
+                printf("json type value detected\n");
+                ReturnJsonPtr->JsonRowPtr = LocalJson->JsonRowPtr;
+                ReturnJsonPtr->len = LocalJson->len;
+            }
+            else if (LocalJson->JsonRowPtr[0].len > 1){ //if the list's element has multiple element already
+                printf("array of values detected\n");
+
+            }
+            else {
+                printf("primitive value detected\n");
+            }
         }
         if (CurrentStrPtr[0] == ']'){
             shift_bytes_down(CurrentStrPtr, 1);
         }
 
     }
+
+
     else if (CurrentStrPtr[0] == '\"'){ //the main Object is a string, and can only have one JsonRow
+        //TODO: pack this into the primitive parser function
         char* parsed_value = parse_quoted_string(CurrentStrPtr);
         if (parsed_value == NULL){
             printf("parsing string from double quotes failed.\n");
@@ -125,8 +149,18 @@ Json* parse_value(char* CurrentStrPtr){
         shift_bytes_down(CurrentStrPtr, (parsed_value)+2); //+2 for the double quotes
         printf("Raw JSON string after parsing a string out: %s\n", CurrentStrPtr);
 
-        return NULL; //???
+        JsonValue* JsonVal = init_json_value(parsed_value, STRING);
+        if (JsonVal == NULL){
+            printf("Json value init failed.\n");
+            return NULL;
+        }
+        ReturnRowPtr->JsonValuesListPtr = JsonVal;
+        ReturnRowPtr->len = 1;
+        
+        ReturnJsonPtr->len = 1;
     }
+
+
     else if (CurrentStrPtr[0] >= 48 && CurrentStrPtr[0] <= 57){ //if the current string part points to a number
         //TODO: pack these into the function as well.
         char* NumEndIdx;
@@ -136,26 +170,29 @@ Json* parse_value(char* CurrentStrPtr){
         int num_len = NumEndIdx - CurrentStrPtr;
         shift_bytes_down(CurrentStrPtr, NumEndIdx);
         JsonValue* JsonVal = init_json_value(ParsedNumPtr, DOUBLE);
-        if (JsonVal == NULL){return NULL;}
-        ReturnJsonPtr->JsonRowPtr = init_row(NULL, JsonVal, 1);
-        if (ReturnJsonPtr->JsonRowPtr == NULL){return NULL;}
-        ReturnJsonPtr->JsonRowPtr->JsonValuesListPtr = JsonVal;
-        ReturnJsonPtr->JsonRowPtr->KeyPtr = NULL;
-        ReturnJsonPtr->JsonRowPtr->len = 1;
+        if (JsonVal == NULL){
+            printf("Json value init failed.\n");
+            return NULL;
+        }
+
+        ReturnRowPtr->JsonValuesListPtr = JsonVal;
+        ReturnRowPtr->len = 1;
+
         ReturnJsonPtr->len = 1;
-
-
-
+        
     }
+
     //handle boolean value
     else if (CurrentStrPtr[0] == 't' || CurrentStrPtr == 'f'){
-            //TODO: pack these into the function as well.
-            int* BoolStorage = malloc(sizeof(int));
+        //TODO: pack these into the function as well.
+        int* BoolStorage = malloc(sizeof(int));
+        
+        JsonValue* JsonVal = init_json_value(BoolStorage, BOOL);
+        if (JsonVal == NULL){
+            printf("Json value init failed.\n");
+            return NULL;
+        }
             
-            JsonValue* JsonVal = init_json_value(BoolStorage, BOOL);
-            JsonRow* OnlyRow = init_row(NULL, JsonVal, 1);
-            ReturnJsonPtr->JsonRowPtr = OnlyRow;
-            ReturnJsonPtr->len = 1;
         if (strncmp(CurrentStrPtr, "true", 4) == 1){
             *(BoolStorage) = 1;
             shift_bytes_down(CurrentStrPtr, 4);
@@ -168,10 +205,14 @@ Json* parse_value(char* CurrentStrPtr){
             printf("boolean value wasn't true, neither false. returning...\n");
             free(BoolStorage);
             free(JsonVal);
-            free(OnlyRow);
             free(ReturnJsonPtr);
-            return NULL;
+            return NULL; //REMINDER: this block returns the value. In case of a usable boolean, this gets skipped.
         }
+
+        ReturnRowPtr->JsonValuesListPtr = JsonVal;
+        ReturnRowPtr->len = 1;
+        
+        ReturnJsonPtr->len = 1;
     }
 
     return ReturnJsonPtr;
