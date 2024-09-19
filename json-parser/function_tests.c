@@ -4,6 +4,7 @@
 #include <math.h>
 #include <string.h>
 #include "rfc_8259_json.h"
+#include "rfc_8259_encoder.h"
 
 int main(){
     JsonValue* FirstVal = init_json_value("miners", STRING);
@@ -58,7 +59,7 @@ int main(){
 
     char* json_string = calloc(24, 1);
     strcpy(json_string, "{\n\t\"factcheck\":true\n\t}");
-    printf("json pointer: %p\n", tokenize_json(json_string, 24));
+    printf("json pointer: %p\n", start_json_parsing(json_string));
 
     //TODO: write more tests for existing functions
     // + write string-to-json converter
