@@ -40,7 +40,8 @@ int check_json_validity(char* JsonArrPtr){
                 printf("String as main type was found. it was invalid.\n");
                 return -1;
             }
-            i += result;
+            i += result; //so string is continued with the already parsed part
+            
         }
     }
 
