@@ -85,12 +85,12 @@ JsonValue* init_json_value(void* InputValue, TYPE InputType){
 
 //constructs a pointer to an array of pointers. The "ValuesLength" variable specifies the length of the variables.
 JsonRow* init_row(char* InputKeyPtr, JsonValue* InputValuesPtr, int ValuesLength){
-    // if (ValuesLength < 1){ //InputKeyPtr == NULL || InputValuesPtr == NULL || 
+    /* if (ValuesLength < 1){ //InputKeyPtr == NULL || InputValuesPtr == NULL || 
     //     printf("row cannot be initialized. the values length was too short, \
     //     or one of the pointers is null:\n%p\n%p\n%d\n", InputKeyPtr, InputValuesPtr, ValuesLength);
 
     //     return NULL;
-    // }
+    // }*/
 
     JsonRow* CreatedRowPtr = malloc(sizeof(JsonRow));
     if (CreatedRowPtr == NULL){
@@ -268,6 +268,7 @@ char* stringify_value(JsonValue* InputValuePtr, int ValuesLength, int JsonLevel)
     }
     int num_length;
     char* NumStr = NULL;
+    char* inner_json;
     for (int i=0; i<ValuesLength; i++){
         switch(InputValuePtr[i].type){
             case INT:
@@ -325,7 +326,7 @@ char* stringify_value(JsonValue* InputValuePtr, int ValuesLength, int JsonLevel)
 
             case JSON:
                 //recursive call to stringify json is necessary
-                char* inner_json = stringify_json(InputValuePtr[i].ValuePtr, JsonLevel+1);
+                inner_json = stringify_json(InputValuePtr[i].ValuePtr, JsonLevel+1);
                 if (inner_json == NULL){
                     printf("stringifying inner json failed.\n");
                     return NULL;

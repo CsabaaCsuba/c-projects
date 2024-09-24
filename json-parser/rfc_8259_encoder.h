@@ -109,14 +109,23 @@ Json* parse_value(char* CurrentStrPtr){
     ReturnJsonPtr->JsonRowPtr = ReturnRowPtr;
 
     if (CurrentStrPtr[0] == '{'){ //the main Object is a JSON, and can have multiple rows
+    //TODO: make the return JSON's JSONRowPtr expanded on each new value
 
     }
     else if (CurrentStrPtr[0] == '['){ //the main Object is a list, and can only have one JsonRow, but that can have any type of multiple Json values
         //expand the same JSON values.
         shift_bytes_down(CurrentStrPtr, 1);
+        int element_count = 0;
         for (int i=0; CurrentStrPtr[i] != ']'; i++){
             Json* LocalJson = parse_value(CurrentStrPtr);
-            printf("string after shifting: %s", LocalJson);
+            if (LocalJson != NULL){
+                element_count++;
+            }
+
+            printf("string after shifting: %s", CurrentStrPtr);
+
+            
+
             //infer the type of the list's content.
             if (LocalJson->JsonRowPtr[0].KeyPtr != NULL){ //if the list's element is an actual JSON
                 printf("json type value detected\n");
@@ -125,7 +134,8 @@ Json* parse_value(char* CurrentStrPtr){
             }
             else if (LocalJson->JsonRowPtr[0].len > 1){ //if the list's element has multiple element already
                 printf("array of values detected\n");
-
+                ReturnJsonPtr->JsonRowPtr = LocalJson->JsonRowPtr; //pass the list's pointer to the return JSON struct
+                ReturnJsonPtr->len = 1; //it's not an actual JSON, but it has one row, so it should be made clear
             }
             else {
                 printf("primitive value detected\n");
@@ -146,7 +156,7 @@ Json* parse_value(char* CurrentStrPtr){
             return NULL;
         }
         printf("parsed value: %s\n", parsed_value);
-        shift_bytes_down(CurrentStrPtr, (parsed_value)+2); //+2 for the double quotes
+        shift_bytes_down(CurrentStrPtr, strlen(parsed_value)+2); //+2 for the double quotes
         printf("Raw JSON string after parsing a string out: %s\n", CurrentStrPtr);
 
         JsonValue* JsonVal = init_json_value(parsed_value, STRING);
@@ -168,7 +178,7 @@ Json* parse_value(char* CurrentStrPtr){
         *ParsedNumPtr = strtod(CurrentStrPtr, &NumEndIdx);
         printf("parsed number: %lf", *ParsedNumPtr);
         int num_len = NumEndIdx - CurrentStrPtr;
-        shift_bytes_down(CurrentStrPtr, NumEndIdx);
+        shift_bytes_down(CurrentStrPtr, num_len);
         JsonValue* JsonVal = init_json_value(ParsedNumPtr, DOUBLE);
         if (JsonVal == NULL){
             printf("Json value init failed.\n");
@@ -183,7 +193,7 @@ Json* parse_value(char* CurrentStrPtr){
     }
 
     //handle boolean value
-    else if (CurrentStrPtr[0] == 't' || CurrentStrPtr == 'f'){
+    else if (CurrentStrPtr[0] == 't' || CurrentStrPtr[0] == 'f'){
         //TODO: pack these into the function as well.
         int* BoolStorage = malloc(sizeof(int));
         
@@ -236,6 +246,6 @@ Json* start_json_parsing(char* OriginalStr){
     Json* EntireJSONPtr = parse_value(WorkStrPtr);
 
 
-    return NULL;
+    return EntireJSONPtr;
 
 }
