@@ -1,0 +1,7 @@
+step 1:
+    -infer data type
+        -> if primitive, create JSON with that type
+        -> if list, infer the type of each of it's elements
+        -> if JSON, start parsing the keys, and the data types
+
+
