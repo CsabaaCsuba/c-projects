@@ -47,3 +47,11 @@ char* remove_character(char* original, char char_to_remove){
     return NewArr;
 
 }
+
+void shift_bytes(char* str, int amount_to_shift) {
+    int len = strlen(str);
+    if (amount_to_shift >= len) {
+        return;
+    }
+    memmove(str, str + amount_to_shift, len - amount_to_shift + 1); // +1 for null terminator
+}
