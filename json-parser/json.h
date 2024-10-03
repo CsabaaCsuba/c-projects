@@ -27,58 +27,104 @@ typedef struct JS_Object{
 
 } JS_Object;
 
-void Parse_String(char* StringPtr){ //prints bullshit as it goes
+void Verbose_String_Parsing(char* StringPtr){ //prints bullshit as it goes
     //TODO: create some string checking-handling based on string length
-    if (strncmp(StringPtr, (char*)"null", 5) == 0){ //if strings are the same;
-        printf("found null.\n");
+        //null checking
+    if (strncmp(StringPtr, (char*)"null", 4) == 0){
+        printf("found is literally null\n");
+        shift_bytes(StringPtr, 4);
     }
+    //number checking
     else if (StringPtr[0] >= 48 && StringPtr[0] <= 57){
-        printf("found number.\n");
+        double num;
+        int is_num_found = sscanf(StringPtr, "%lf", &num);
+        int num_length = 0;
+        //a number can only have 2 dots
+        int dot_count = 0;
+        if (is_num_found)
+            printf("found number: %lf\n", num);
+
+        //while all the characters are valid numeric values (or a dot), the number is valid
+        
+        for(int i=0; ((StringPtr[i] >= 48 && StringPtr[i] <= 57) || (StringPtr[i] == '.')) && dot_count < 2;i++){
+            if (StringPtr[i] == '.'){
+                dot_count++;
+            }
+            if (dot_count == 2){
+                printf("number contains more dots than one. invalid JSON\n");
+                return;
+            }
+            num_length++;
+
+            
+        }
+        
+        printf("number length: %d\n", num_length);
+        shift_bytes(StringPtr, num_length);
+
     }
-    else if (strncmp(StringPtr, (char*)"true", 5) == 0|| strncmp(StringPtr, (char*)"false", 6) == 0){
-        printf("found boolean.\n");
+
+    //boolean checking
+    else if (strncmp(StringPtr, (char*)"true", 4) == 0){
+        printf("found boolean. the value is true\n");
+        shift_bytes(StringPtr, 4);
     }
+    else if (strncmp(StringPtr, (char*)"false", 5) == 0){
+        printf("found boolean. the value is false\n");
+        shift_bytes(StringPtr, 5);
+    }
+    //string checking
     else if (StringPtr[0] == '"'){
         printf("string is likely found\n");
+        //TODO: write a string-parser function, because of the \" character
         char* StringPartEndPtr = strchr(StringPtr+1, '"');
         int str_len = (int) (StringPartEndPtr - StringPtr);
         shift_bytes(StringPtr, str_len+1); //+1 because of the initial " character
         //TODO: check if entire string is valid
     }
+    //list checking
     else if (StringPtr[0] == '['){
         printf("list is likely found\n");
+        // int i = 0;
+        while (*(StringPtr+1) != ']'){ //loop until al the numbers are parsed
+            Verbose_String_Parsing(StringPtr+1);
+        }
+        printf("list parsed.\n");
+        shift_bytes(StringPtr, 2);
+        // if (StringPtr+1);
         
         //TODO: check list's elements
     }
+
     else if (StringPtr[0] == '{'){
         printf("JSON format is likely found\n");
-        int i = 10;
-        while (*(StringPtr+1) != '\0' || i > 10){
-            Parse_String(StringPtr+1);
+        while (*(StringPtr+1) != '}'){
+            Verbose_String_Parsing(StringPtr+1);
         }
+        printf("JSON is parsed.\n");
+        shift_bytes(StringPtr, 2);
         
         //TODO: recursively parse string to validate JSON elements (DO NOT overthing)
     }
     else if (StringPtr[0] == ':'){
-        printf("delimiter found\n");
+        printf("colon found\n");
         shift_bytes(StringPtr, 1);
     }
     else if (StringPtr[0] == ','){
-        printf("comma found");
+        printf("comma found\n");
         shift_bytes(StringPtr, 1);
+    }
+    else {
+        printf("impossible token received.\n");
     }
 }
 
 JS_Object* start_string_parsing(char* RawStr){
-    char* WorkStr = RawStr;
-    char whitespaces[] = " \n\r\t";
-    printf("bruh.\n");
-    for (int i=0; i<5; i++){
-        //TODO: this doesn't work, check the function
-        WorkStr = remove_character(WorkStr, whitespaces[i]);
-    }
-    printf("string parsed: %s: \n", WorkStr);
-    Parse_String(WorkStr);
+    char* WorkStr;
+    WorkStr = remove_characters(RawStr, (char*)" \n\r\t");
+
+    printf("string parsed: %s\n", WorkStr);
+    Verbose_String_Parsing(WorkStr);
     
 
     return NULL;
