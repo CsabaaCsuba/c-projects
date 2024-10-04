@@ -1,3 +1,4 @@
+#include "typedefs.h"
 #define bool unsigned char
 #define false 0
 #define true 1
@@ -95,10 +96,53 @@ char* remove_characters(char* original, char* chars_to_remove){ //remove a list 
 
 }
 
+char* parse_until_quotation_mark(char* StringPartPtr){
+    if (*StringPartPtr == '\"'){
+        char* LastQuotePosPtr = strchr(StringPartPtr+1, '\"');
+        if (LastQuotePosPtr == NULL){
+            printf("the string wasn't terminated properly.\n");
+            return NULL;
+        }
+        int index = LastQuotePosPtr - StringPartPtr;
+        printf("the end of the string is at index %d, after character (%c)\n", index, *(StringPartPtr+index-1));
+
+        char* ParsedStr = malloc(index);
+        if (ParsedStr == NULL){
+            printf("malloc failed.\n"); 
+            return NULL;
+        }
+        ParsedStr[index-1] = '\0';
+
+        strncpy(ParsedStr, StringPartPtr+1, index-1);
+        printf("parsed string in the end: %s\n", ParsedStr);
+        
+        return ParsedStr;
+    }
+    else return NULL;
+}
+
 void shift_bytes(char* str, int amount_to_shift) {
     int len = strlen(str);
     if (amount_to_shift >= len) {
         return;
     }
     memmove(str, str + amount_to_shift, len - amount_to_shift + 1); // +1 for null terminator
+}
+
+//reallocates the Dest_Ptr to append the contents of the Source_Ptr to it. It DOES NOT free Source_Ptr
+struct JS_Object* append_to_JS_object_list(struct JS_Object* Dest_Ptr, struct JS_Object* Source_Ptr, int dest_len){
+    if (Dest_Ptr == NULL || Source_Ptr == NULL){
+        printf("source ptr: %p, dest ptr: %p\n", Dest_Ptr, Source_Ptr);
+        return NULL;
+    }
+    struct JS_Object* New_Memblock = realloc(Dest_Ptr, dest_len+1); //this SHOULD BE good, according to ChatGPT's opinion on pointer arithmetics
+    if (New_Memblock == NULL){
+        printf("malloc failed.\n");
+        return NULL;
+    }
+
+    //Increrment the new mem block's ptr by 
+    memmove(New_Memblock+dest_len, Source_Ptr, sizeof(struct JS_Object)); //TODO: check if it's correct (ChatGPT said so)
+
+    return New_Memblock;
 }
