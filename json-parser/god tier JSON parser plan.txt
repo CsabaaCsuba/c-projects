@@ -15,3 +15,7 @@ JS_Object struct:
     if the Dtype is a STRING, the void pointer should be cast to a char array
     if the Dtype is a LIST, the void pointer should be cast to a pointer (array) of JS_Objects
     if the Dtype is JSON, ONLY THEN does the Keys field matter. the void pointer should be casted to a pointer (array) of JS_Objects
+
+
+TODO: Write a JSON to string converter
+    - it should iterate through each JSON object, and their values with their lengths. The type inference will be easy.
