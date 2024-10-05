@@ -96,6 +96,7 @@ char* remove_characters(char* original, char* chars_to_remove){ //remove a list 
 
 }
 
+//returns the first string "slice" in between quotation marks. The string has to start with a "
 char* parse_until_quotation_mark(char* StringPartPtr){
     if (*StringPartPtr == '\"'){
         char* LastQuotePosPtr = strchr(StringPartPtr+1, '\"');
@@ -121,6 +122,69 @@ char* parse_until_quotation_mark(char* StringPartPtr){
     else return NULL;
 }
 
+char* remove_formatters_from_non_strings(char* original){ //remove a list of chars combined in a string
+    char* chars_to_remove = " \n\r\t";
+    if (original == NULL){
+        return NULL;
+    }
+    int original_length = strlen(original);
+    if (original_length == 0) return NULL;
+
+    char* NewArr = malloc(original_length+1);
+    if (NewArr == NULL) return NULL;
+
+    int removable_chars_len = strlen(chars_to_remove);
+    if (removable_chars_len == 0) return NULL;
+    printf("chars len: %d\n", removable_chars_len);
+
+    int new_strlen = 0;
+    bool is_char_found = false;
+    bool is_in_string = false;
+    //loop each char through each of the "banned" characters, and append them to a new char array if there is no match in the "banned" character's loop
+    for (int i=0; i<original_length; i++){
+        for (int j=0; j<removable_chars_len; j++){
+            if (original[i] == '"'){
+                if (!is_in_string){
+                    printf("current char: %c. is_in_string set to true.\n", original[i]);
+                    is_in_string = true;
+                }
+                    
+                else{
+                    printf("current char: %c. is_in_string set to false.\n", original[i]);
+                    is_in_string = false;
+                }
+            }
+            if (original[i] == chars_to_remove[j] && !is_in_string){
+                is_char_found = true;
+                // printf("\"%c\" matches with \"%c\"\n", original[i], chars_to_remove[j]);
+                break;
+            }
+        }
+        if (!is_char_found || is_in_string){
+
+            NewArr[new_strlen] = original[i];
+            new_strlen++;
+        }
+        is_char_found = false;
+    }
+        
+    
+    NewArr[new_strlen] = '\0';
+    NewArr = realloc(NewArr, new_strlen+1);
+    // original = realloc(original, new_strlen+1);
+    // strcpy(original, NewArr);
+    // original[new_strlen] = '\0';
+    if (NewArr == NULL) return NULL;
+
+    return NewArr;
+
+}
+
+
+
+
+
+
 void shift_bytes(char* str, int amount_to_shift) {
     int len = strlen(str);
     if (amount_to_shift >= len) {
@@ -135,14 +199,15 @@ struct JS_Object* append_to_JS_object_list(struct JS_Object* Dest_Ptr, struct JS
         printf("source ptr: %p, dest ptr: %p\n", Dest_Ptr, Source_Ptr);
         return NULL;
     }
-    struct JS_Object* New_Memblock = realloc(Dest_Ptr, dest_len+1); //this SHOULD BE good, according to ChatGPT's opinion on pointer arithmetics
+    printf("Object List new size: %d\n", dest_len+1);
+    struct JS_Object* New_Memblock = realloc(Dest_Ptr, sizeof(struct JS_Object)*(dest_len+1));
     if (New_Memblock == NULL){
-        printf("malloc failed.\n");
+        printf("malloc for a larger JS_Object memory block failed.\n");
         return NULL;
     }
 
     //Increrment the new mem block's ptr by 
-    memmove(New_Memblock+dest_len, Source_Ptr, sizeof(struct JS_Object)); //TODO: check if it's correct (ChatGPT said so)
+    memcpy(New_Memblock+dest_len, Source_Ptr, sizeof(struct JS_Object)); //TODO: check if it's correct (ChatGPT said so)
 
     return New_Memblock;
 }

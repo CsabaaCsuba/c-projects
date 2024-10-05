@@ -113,7 +113,7 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
         return Main_Obj;
     }
     //number checking
-    else if (StringPtr[0] >= 48 && StringPtr[0] <= 57){
+    else if ((StringPtr[0] >= 48 && StringPtr[0] <= 57) || StringPtr[0] == '-'){
         double num;
         int is_num_found = sscanf(StringPtr, "%lf", &num);
         int num_length = 0;
@@ -122,9 +122,9 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
         if (is_num_found)
             printf("found number: %lf\n", num);
 
-        //while all the characters are valid numeric values (or a dot), the number is valid
+        //while all the characters are valid numeric values (or a dot), or(the loop just starts, and the first character is a minus) the number is valid
         
-        for(int i=0; ((StringPtr[i] >= 48 && StringPtr[i] <= 57) || (StringPtr[i] == '.')) && dot_count < 2;i++){
+        for(int i=0; ((StringPtr[i] == '-' && i == 0) || (StringPtr[i] >= 48 && StringPtr[i] <= 57) || (StringPtr[i] == '.')) && dot_count < 2;i++){
             if (StringPtr[i] == '.'){
                 dot_count++;
             }
@@ -138,10 +138,10 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
             
         }
         
-        double* num_storage = malloc(sizeof(double));
-        if (!num_storage){
+        double* num_storage = malloc(8); //sizeof(double)
+        if (num_storage == NULL){
             free(Main_Obj);
-            printf("malloc failed.\n");
+            printf("number's storer malloc failed.\n");
             return NULL;
         }
         *num_storage = num;
@@ -212,10 +212,9 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
                 return NULL;
             }
             else if ((Parsed_Data == (struct JS_Object*)(-2)) && separator_is_next){ //if it's not null but -2, it can be correct, since it marks a comma
-                printf("colon found. That is a legit separator in lists.\n");
-                free(Sub_Data);
+                printf("comma found. That is a legit separator in lists.\n");
+                // free(Sub_Data);
                 separator_is_next = false;
-                i--; //decrement i because it is not an element that will be added to the String_Parser
             }
             else if (Parsed_Data == (struct JS_Object*)(-1)){
                 printf("List can't have colons instead of commas!\n");
@@ -223,9 +222,14 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
                 free(Sub_Data);
                 return NULL;
             }
+            else if (Parsed_Data == (struct JS_Object*)(-3)){
+                printf("General formatter found\n");
+                // free(Sub_Data);
+            }
             else { //if data is correct
                 //in case of first value, no need for realloc
                 if (i == 0){
+                    printf("parsed data pointer: %p, Sub data pointer: %p\n", Parsed_Data, Sub_Data);
                     Sub_Data->Object_Dtype = Parsed_Data->Object_Dtype;
                     Sub_Data->Keys = Parsed_Data->Keys;
                     Sub_Data->Value_Length = Parsed_Data->Value_Length;
@@ -233,14 +237,16 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
                     // free(Parsed_Data);
                 }
                 else {
-                    printf("parsed data pointer: %p\n", Parsed_Data);
+                    printf("parsed data pointer: %p, Sub data pointer: %p\n", Parsed_Data, Sub_Data);
                     Sub_Data = append_to_JS_object_list(Sub_Data, Parsed_Data, i);
                     if (Sub_Data == NULL){
                         printf("function failed.\n");
                         return NULL;
                     }
+                    free(Parsed_Data);
                 }
-                printf("parsed data pointer: %p\n", Parsed_Data);
+                // printf("parsed data pointer: %p\n", Parsed_Data);
+                // free(Parsed_Data);
                 
                 i++;
                 separator_is_next = true;
@@ -280,6 +286,10 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
             if (Parsed_Data == ((struct JS_Object*)(void*)(-1)) || (struct JS_Object*)(void*)(-2)){
                 //TODO: implement normal check for the right formatter.\n
                 printf("formatter found in JSON-reader loop.\n");
+                continue;
+            }
+            else if (Parsed_Data == (struct JS_Object*)(-3)){
+                printf("General formatter found\n");
                 continue;
             }
 
@@ -352,6 +362,12 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
         shift_bytes(StringPtr, 1);
         return (struct JS_Object*)((void*)(-2));
     }
+    else if (StringPtr[0] == ' ' || StringPtr[0] == '\n' || StringPtr[0] == '\r' || StringPtr[0] == '\t'){
+        free(Main_Obj);
+        printf("formatter found\n");
+        shift_bytes(StringPtr, 1);
+        return (struct JS_Object*)((void*)(-3)); //-3 for general formatters: char* formatters = " \n\r\t";
+    }
     else {
         printf("impossible token received.\n");
         return NULL;
@@ -362,10 +378,12 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
 }
 
 struct JS_Object* start_string_parsing(char* RawStr){
-    char* WorkStr;
-    WorkStr = remove_characters(RawStr, (char*)" \n\r\t");
+    char* WorkStr = malloc(strlen(RawStr)+1);
+    if (WorkStr == NULL){printf("initial malloc failed.\n");return NULL;};
+    strcpy(WorkStr, RawStr);
+    // WorkStr = remove_formatters_from_non_strings(RawStr);
 
-    printf("Raw JSON-string parsed: %s\n", WorkStr);
+    // printf("Raw JSON-string parsed: %s\n", WorkStr);
     // Verbose_String_Parsing(WorkStr);
     struct JS_Object* Parsed_Json = String_Parsing(WorkStr);
     
