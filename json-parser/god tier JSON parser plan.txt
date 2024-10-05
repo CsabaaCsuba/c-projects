@@ -19,3 +19,6 @@ JS_Object struct:
 
 TODO: Write a JSON to string converter
     - it should iterate through each JSON object, and their values with their lengths. The type inference will be easy.
+
+String parsing:
+loop until DOUBLE QUOTATION MARK,

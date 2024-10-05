@@ -181,20 +181,40 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
     //string checking
     else if (StringPtr[0] == '"'){
         printf("string is likely found\n");
-        char* StringPartEndPtr = strchr(StringPtr+1, '"'); //TODO: handle the \" character
-        int str_len = (int) (StringPartEndPtr - StringPtr);
-        char* Return_Ptr = parse_until_quotation_mark(StringPtr);
-        if (Return_Ptr == NULL){
+        int string_len = 0;
+        bool is_escaped = false;
+        //loop until the string the following is true: string contains a " and is not escaped
+        for (int i=1; !(StringPtr[i] == '\"' && !is_escaped); i++){
+            if (StringPtr[i] == '\\'){
+                printf("next character is an escaped one.\n");
+                is_escaped = true;
+            }
+            else {
+                // printf("%c", StringPtr[i]);
+                is_escaped = false;
+            }
+            string_len++;
+        }
+        // printf("\n");
+        char* Parsed_Str = malloc(string_len+1);
+        if (Parsed_Str == NULL){
             free(Main_Obj);
             return NULL;
         }
         
+        //copy the actual characters (and not the quotation marks only [that's why StringPtr is incremented])
+        memcpy(Parsed_Str, StringPtr+1, string_len);
+        Parsed_Str[string_len] = '\0';
+
+        printf("string len after calculation: %d\n", string_len);
+        
+        
         Main_Obj->Object_Dtype = STRING;
         Main_Obj->Keys = NULL;
         Main_Obj->Value_Length = 1;
-        Main_Obj->Value_s = Return_Ptr;
+        Main_Obj->Value_s = Parsed_Str;
 
-        shift_bytes(StringPtr, str_len+1); //+1 because of the initial " character
+        shift_bytes(StringPtr, string_len+2); //+2 because of the " characters
         return Main_Obj;
     }
     //list checking

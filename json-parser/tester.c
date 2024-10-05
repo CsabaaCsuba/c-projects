@@ -49,7 +49,9 @@ int main(){
 \"lucky_numbers\":[7, 13, 22, 3.14], \
 \"complex_number\":{ \
     \"real\":1.0, \"imaginary\":-1.0 \
-} \
+}, \
+\"escaped_characters\":\"Tab:\\t, Newline:\\n, Quote:\\\"\", \
+\"nested_escapes\":\"Line Break\\r\\nAnother Line\" \
 }");
 
 
