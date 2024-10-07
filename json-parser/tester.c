@@ -61,6 +61,6 @@ int main(){
     // start_string_parsing("555555555555555.5");
     // start_string_parsing("null");
     // struct JS_Object* bruh = start_string_parsing("[null, \"anyad\"]");
-    // printf("%p\n", bruh);
+    printf("%s\n", Convert_To_String(idk));
     return 0;
 }

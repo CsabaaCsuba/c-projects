@@ -211,3 +211,30 @@ struct JS_Object* append_to_JS_object_list(struct JS_Object* Dest_Ptr, struct JS
 
     return New_Memblock;
 }
+
+void print_js_type_enum(DataType InputType){
+    printf("the current type is: ");
+    switch (InputType){
+        case JS_NULL:
+            printf("null");
+            break;
+        case NUMBER:
+            printf("number");
+            break;
+        case BOOLEAN:
+            printf("boolean");
+            break;
+        case STRING:
+            printf("string");
+            break;
+        case LIST:
+            printf("list");
+            break;
+        case JSON:
+            printf("JSON");
+            break;
+        default:
+            printf("ineligible.");
+    }
+    printf("\n");
+}

@@ -78,6 +78,7 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
         Main_Obj->Object_Dtype = BOOLEAN;
         bool* bool_ptr = malloc(sizeof(bool)); //TODO: make this safe
         *bool_ptr = 0;
+        Main_Obj->Value_s = (void*) bool_ptr;
         shift_bytes(StringPtr, 5);
     }
     //string checking
@@ -234,10 +235,10 @@ struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
             }
             else {
                 if (i == 0){ //no need for realloc in the first filling of the sub-data
-                    Sub_Data->Object_Dtype = Sub_Data->Object_Dtype;
+                    Sub_Data->Object_Dtype = Parsed_Data->Object_Dtype;
                     Sub_Data->Keys = Parsed_Data->Keys;
-                    Sub_Data->Value_Length = Sub_Data->Value_Length;
-                    Sub_Data->Value_s = Sub_Data->Value_s;
+                    Sub_Data->Value_Length = Parsed_Data->Value_Length;
+                    Sub_Data->Value_s = Parsed_Data->Value_s;
                 }
                 else {
                     Sub_Data = append_to_JS_object_list(Sub_Data, Parsed_Data, i);
@@ -303,21 +304,31 @@ struct JS_Object* start_string_parsing(char* RawStr){
     return Parsed_Json;
 }
 
+char* Convert_To_String(struct JS_Object* InputObj);
+
 
 char* Convert_Primitive_To_String(struct JS_Object* InputObj){
     char* ReturnVal;
+    if (InputObj == NULL){
+        printf("null\n");
+        return NULL;
+    }
+    printf("Objects' Dtype: %d\n", InputObj->Object_Dtype);
+    
     switch (InputObj->Object_Dtype){
         case JS_NULL:
             ReturnVal = malloc(5);
             strcpy(ReturnVal, "null");
-            ReturnVal[4] = '\0';
             return ReturnVal;
         case NUMBER:
             int num_length = snprintf(NULL, 0, "%lf", *(double*)InputObj->Value_s); 
             ReturnVal = malloc(num_length+1);
             snprintf(ReturnVal, num_length, "%lf", *(double*)InputObj->Value_s);
+            printf("parsed number: %s\n", ReturnVal);
             return ReturnVal;
         case BOOLEAN:
+            printf("Objects' Value: %d\n", *(bool*)InputObj->Value_s);
+            printf("%d\n", *(bool*)InputObj->Value_s);
             if (*(bool*)InputObj->Value_s == 0){
                 ReturnVal = malloc(6);
                 strcpy(ReturnVal, "false");
@@ -326,6 +337,7 @@ char* Convert_Primitive_To_String(struct JS_Object* InputObj){
                 ReturnVal = malloc(5);
                 strcpy(ReturnVal, "true");
             }
+            printf("received boolean: %s\n", ReturnVal);
             return ReturnVal;
         case STRING:
             int string_len = strlen((char*)InputObj->Value_s);
@@ -340,21 +352,70 @@ char* Convert_Primitive_To_String(struct JS_Object* InputObj){
 
 }
 
-char* Convert_JSON_List_To_String(struct JS_Object* List_Object){
+char* Convert_List_To_String(struct JS_Object* List_Object){
     if (List_Object->Object_Dtype != LIST){
         printf("won't convert non-lists to lists\n");
         return NULL;
     }
-    for (int i=0; i<List_Object->Value_Length; i++){
+    char* Return_Str = malloc(2);
+    strcpy(Return_Str, "[");
+    // int return_len = 0;
+    for (unsigned int i=0; i<List_Object->Value_Length; i++){
+        char* CurrentElementStr = Convert_To_String(((struct JS_Object*)List_Object->Value_s+i));
+        if (CurrentElementStr == NULL){
+            printf("List's element's conversion failed.\n");
+            return NULL;
+        }
+        Return_Str = extend_with_chars(Return_Str, CurrentElementStr);
+
+        //add a comma if there are other list elements
+        if (i < List_Object->Value_Length-1)
+            Return_Str = extend_with_chars(Return_Str, ", ");
+
         //call the convert_to_string on each one (that will redirect to Convert_Primitive_To_String as well)
     }
-    
+
+    Return_Str = extend_with_chars(Return_Str, "]\n");
+
+    return Return_Str;
 }
+
+
+
 
 //this handles JSON-type objects
 char* Convert_To_String(struct JS_Object* InputObj){
-    while (InputObj != NULL){
-        printf("fasz\n");
+    char* Return_Str;
+    if (InputObj->Object_Dtype == JSON){
+        Return_Str = malloc(3);
+        strcpy(Return_Str, "{\n");
+        for (unsigned int i=0; i<InputObj->Value_Length; i++){
+            printf("JSON to string conversion started.\n");
+            //TODO: check if the keys & values are valid
+            printf("key: %s\n", InputObj->Keys[i]);
+            Return_Str = extend_with_chars(Return_Str, InputObj->Keys[i]);
+            Return_Str = extend_with_chars(Return_Str, " : ");
+            
+            struct JS_Object* Current_Obj = ((struct JS_Object* )InputObj->Value_s)+i;
+            printf("type of js object: %d\n", Current_Obj->Object_Dtype);
+            char* Obj_Str = Convert_To_String(Current_Obj);
+            Return_Str = extend_with_chars(Return_Str, Obj_Str);
+            free(Obj_Str);
+
+            if (i < InputObj->Value_Length-1)
+                Return_Str = extend_with_chars(Return_Str, ",\n");
+
+        }
+
+        Return_Str = extend_with_chars(Return_Str, "\n}");
     }
-    return NULL;
+    else if (InputObj->Object_Dtype == LIST){
+        printf("list to string conversion started.\n");
+        Return_Str = Convert_List_To_String(InputObj);
+    }
+    else {
+        printf("primitive to string conversion started.\n");
+        Return_Str = Convert_Primitive_To_String(InputObj);
+    }
+    return Return_Str;
 }
