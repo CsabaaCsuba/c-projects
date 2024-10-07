@@ -8,7 +8,7 @@
 int main(){
     struct JS_Object* idk = start_string_parsing("{\
 \"name\":\"Alice\", \
-\"age\":30, \
+\"ageAAAAAAAAAAAAAAAAAAAAAaaa\":30, \
 \"isStudent\":false, \
 \"grades\":[85.5, 90, null, {\"semester\":\"Fall\", \"GPA\":3.8}], \
 \"address\":{ \
