@@ -1,546 +1,426 @@
-
-typedef enum {
-    INT,
-    DOUBLE,
-    STRING,
-    JSON,
-    BOOL,
-    LIST //not implemented yet
-} TYPE;
-
-typedef struct {
-    void* ValuePtr;
-    TYPE type;
-} JsonValue;
-
-typedef struct {
-    char* KeyPtr; //only one string value is allowed here.
-    // void** ValuePtr; //can be a list
-    int len; //length of the list
-    // TYPE type;
-    JsonValue* JsonValues; //This can be a list now
-} JsonRow;
-
-typedef struct {
-    int len;
-    JsonRow* JsonRowPtr;
-} Json;
-
-// typedef struct {
-//     int len;
-//     char* ptr;
-// }
+// #ifndef extend_with_chars
+//     #include "utils.h"
+// #endif
+#define bool unsigned char
+#define false 0
+#define true 1
+#define ITER_MAX 100000
+//#include "typedefs.h"
 
 
-//constructs a pointer to an array of pointers. The "ValuesLength" variable specifies the length of the variables.
-JsonRow* init_row(char* InputKeyPtr, void** InputValuePtr, TYPE InputType, int ValuesLength){
-    //TODO: make the input value Ptr a list of pointers.
-    if (InputKeyPtr == NULL || InputValuePtr == NULL || InputValuePtr[0] == NULL || InputType > 4){
-        printf("Null pointers received or InputType is incorrect value.\n");
-        printf("InputKeyPtr: %p\nInputValuePtr:%p\nType:%d\nValuesLength:%d\n", InputKeyPtr, InputValuePtr, InputType, ValuesLength);
+
+
+struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
+    if (StringPtr == NULL){
+        printf("Main parser function's pointer was null.\n");
         return NULL;
     }
-
-    //initializing the json row
-    JsonRow* CreatedJsonRow = malloc(sizeof(JsonRow));
-    if (CreatedJsonRow == NULL){
-        printf("Creating Json Row failed...\n");
-        return NULL;
+    //TODO: create some string checking-handling based on string length
+    //null checking
+    struct JS_Object* Main_Obj = malloc(sizeof(struct JS_Object));
+    Main_Obj->Value_Length = 1;
+    char** Keys_Ptr = NULL;
+    if (strncmp(StringPtr, (char*)"null", 4) == 0){
+        printf("found value is a javascript-null\n");
+        Main_Obj->Object_Dtype = JS_NULL;
+        Main_Obj->Value_s = NULL;
+        shift_bytes(StringPtr, 4);
     }
-
-
-    //set type
-    CreatedJsonRow->type = InputType;
-
-    //copying the InputKeyPtr string to an other location.
-    
-    CreatedJsonRow->KeyPtr = malloc(strlen(InputKeyPtr)+1);
-    if (CreatedJsonRow->KeyPtr == NULL){
-        printf("Creating json key ptr failed...\n");
-        return NULL;
-    }
-    if (memcpy(CreatedJsonRow->KeyPtr, InputKeyPtr, strlen(InputKeyPtr)+1) == NULL){
-        printf("Copying key string to an other location failed.");
-        return NULL;
-    }
-
-
-    //allocating space for the input values
-    int InputTypesSize;
-    if (InputType == INT){
-        InputTypesSize = sizeof(int*);
-    }
-    else if (InputType == DOUBLE){
-        InputTypesSize = sizeof(double*); //a double takes up 8 bytes
-    }
-    else if (InputType == STRING){
-        InputTypesSize = sizeof(char*);
-        //TODO: the problem is here, a 2d matrix have to be produced.
-        // char** 
-        // InputValuePtr = 
-        // InputTypesSize = strlen(InputValuePtr)+1; //account for null-byte
-        /*because valueslength should be the actual number of separate strings,
-        the inputtypesize should be the length of one individual string
-        */
-    }
-    else if (InputType == JSON){
-        InputTypesSize = sizeof(Json*);
-    }
-    else if (InputType == BOOL){
-        InputTypesSize = sizeof(int*);
-    }
-    else {
-        printf("type is a non-existent value");
-        return NULL;
-    }
-
-    CreatedJsonRow->len = ValuesLength;
-    CreatedJsonRow->ValuePtr = malloc(InputTypesSize * ValuesLength);
-    if (CreatedJsonRow->ValuePtr == NULL){
-        printf("malloc for values' ptr failed.\n");
-        return NULL;
-    }
-    if (memcpy(CreatedJsonRow->ValuePtr, InputValuePtr, ValuesLength*InputTypesSize) == NULL){
-        printf("copying values into json row failed.\n");
-        return NULL;
-    }
-
-    
-
-    if (InputType == INT){
-        // printf("Received input value is: %d\n", *(int*)InputValuePtr);
-    }
-    if (InputType == STRING){
-        // char* mystring = (char*)InputValuePtr;
-        // printf("Received input string is: %s\n", mystring);
-    }
-
-
-    return CreatedJsonRow;
-}
-
-Json* init_json(JsonRow* FirstRowPtr){ //If itfails, returns NULL
-    //creates a json struct pointer based on an already existing row's pointer.
-    if (FirstRowPtr == NULL){
-        printf("There should be an actual first row.\n");
-        return NULL;
-    }
-    Json* CreatedJsonPtr = malloc(sizeof(Json));
-    if (CreatedJsonPtr == NULL){
-        printf("malloc for json ptr failed.\n");
-        return NULL;
-    }
-
-    CreatedJsonPtr->len = 1; //one for the first value
-    CreatedJsonPtr->JsonRowPtr = FirstRowPtr;
-
-    return CreatedJsonPtr;
-}
-
-
-Json* add_to_json(Json* JsonPtr, JsonRow* RowPtr){
-    //the JsonPtr will get reallocated. Everything else stays on the same address.
-    if (RowPtr == NULL || JsonPtr == NULL){
-        printf("input row ptr or json ptr is null.\n");
-        return NULL;
-    }
-    JsonRow* NewRowPtr = realloc(JsonPtr->JsonRowPtr, (JsonPtr->len+1) * sizeof(JsonRow));
-    if (NewRowPtr == NULL){
-        printf("new row ptr is null.\n");
-        return NULL;
-    }
-    NewRowPtr[JsonPtr->len] = *RowPtr;
-
-    JsonPtr->JsonRowPtr = NewRowPtr;
-    JsonPtr->len = JsonPtr->len + 1;
-
-    return JsonPtr;
-}
-
-
-//functions related to json printing
-
-char* stringify_json(Json* JsonPtr, int JsonLevel);
-
-int do_pointers_exist(Json* JsonPtr){ //check if json has at least one existing value.
-    if (JsonPtr != NULL){
-        printf("check is good\n");
-        printf("%p\n", JsonPtr->JsonRowPtr);
-        if ((JsonPtr->JsonRowPtr) != NULL){
-            printf("check is still good.\n");
-            if (JsonPtr->JsonRowPtr->ValuePtr != NULL){
-                return 1;
-            }
-        }
-    }
-    return 0;
-}
-
-char* extend_with_chars(char* MainStrPtr, char* ExtendChar){
-    if (MainStrPtr == NULL || ExtendChar == NULL){
-        printf("string cannot be extended, since the main string is null, or the char is not valid\n");
-        return NULL;
-    }
-    int string_length = strlen(MainStrPtr);
-    int chars_length = strlen(ExtendChar);
-    char* NewPtr = realloc(MainStrPtr, string_length+chars_length+1);
-    if (NewPtr == NULL){
-        return NULL;
-    }
-    strncpy(NewPtr+string_length, ExtendChar, chars_length);
-    NewPtr[string_length+chars_length] = '\0';
-
-    return NewPtr;
-
-}
-
-char* realloc_string_based_on_value_type(char* MainStrPtr, JsonRow* JsonRowPtr, int JsonLevel){
-    
-    char* NewPtr;
-    int num_length = 0;
-    int IsList;
-    (JsonRowPtr->len > 1) ? (IsList = 1) : (IsList = 0);
-
-    if (IsList == 1){
-        MainStrPtr = extend_with_chars(MainStrPtr, "[");
-        if (MainStrPtr == NULL){
-            printf("adding square brackets failed.\n");
+    //if current character is numeric / starts with a number
+    else if ((StringPtr[0] >= 48 && StringPtr[0] <= 57) || StringPtr[0] == '-'){
+        double* num_storage = malloc(8);
+        if (num_storage == NULL){
+            free(Main_Obj);
+            printf("number's storer malloc failed.\n");
             return NULL;
         }
-        else
-            printf("square brackets added... String RN: %s\n", MainStrPtr);
+        int is_num_found = sscanf(StringPtr, "%lf", num_storage);
+        int num_length = 0;
+        //a number can only have 2 dots
+        int dot_count = 0;
+        if (!is_num_found){
+            printf("There was only a minus sign, but not a number after it.\n");
+            free(Main_Obj);
+            return NULL;
+        }
+
+
+        //NOT NEEDED
+        //while all the characters are valid numeric values (or a dot), or(the loop just starts, and the first character is a minus) the number is valid
+        for(int i=0; ((StringPtr[i] == '-' && i == 0) || (StringPtr[i] >= 48 && StringPtr[i] <= 57) || (StringPtr[i] == '.')) && dot_count < 2;i++){
+            if (StringPtr[i] == '.'){
+                dot_count++;
+            }
+            if (dot_count == 2){
+                printf("number contains more dots than one. invalid JSON\n");
+                free(Main_Obj);
+                return NULL;
+            }
+            num_length++;   
+        }
+        
+        shift_bytes(StringPtr, num_length);
+        Main_Obj->Object_Dtype = NUMBER;
+        Main_Obj->Value_s = (void*) num_storage;
     }
 
-    int main_str_len;
-    for (int i=0; i<JsonRowPtr->len; i++){
-        main_str_len = strlen(MainStrPtr);
-        switch (JsonRowPtr->type){
-            case INT:
-                printf("int case detected. Current key: %s\n", JsonRowPtr->KeyPtr);
-                int num = *(int*)JsonRowPtr->ValuePtr[i];
-                printf("number found: %d\n", num);
-                
-                //TODO: test the ceil thing
-                num_length = (int)((ceil(log10(num))+1)*sizeof(char));
-                MainStrPtr = realloc(MainStrPtr, main_str_len+num_length+1);
-                if (MainStrPtr == NULL){
-                    free(MainStrPtr);
-                    return NULL;
-                }
-                // MainStrPtr = NewPtr;
-
-                //copy number into the continuation of the string pointer, and place null byte
-                sprintf(MainStrPtr+main_str_len, "%d", num);
-                MainStrPtr[main_str_len+num_length] = '\0';
-
-                
-                // free(NewPtr);
-
-                // printf("String currently:%s\n", NewPtr);
-
-                
-                break;
-            case DOUBLE:
-                printf("double case detected.\n");
-                double double_num = *(double*)JsonRowPtr->ValuePtr[i];
-                printf("non-whole number found: %lf\n", double_num);
-
-                num_length = snprintf(NULL, 0, "%lf", double_num);
-                
-                NewPtr = realloc(MainStrPtr, main_str_len+num_length+1);
-                if (NewPtr == NULL){
-                    free(MainStrPtr);
-                    return NULL;
-                }
-                MainStrPtr = NewPtr;
-
-                //copy number into the continuation of the string pointer, and place null byte
-                sprintf(MainStrPtr+main_str_len, "%lf", double_num);
-                MainStrPtr[main_str_len+num_length] = '\0';
-
-                // printf("String currently:%s\n", NewPtr);
-
-    
-                break;
-            case STRING: //TODO: test this
-                MainStrPtr = extend_with_chars(MainStrPtr, "\"");
-                if (MainStrPtr == NULL){
-                    return NULL;
-                }
-                main_str_len++; //since it's usually incremented outside, it's necessary to increment it after adding the quotation mark here.
-
-                printf("string case detected.\n");
-                char* StringFromJson = (char*)JsonRowPtr->ValuePtr[i];
-                printf("String value found: %s\n", StringFromJson);
-
-                int string_length = strlen(StringFromJson);
-
-                NewPtr = realloc(MainStrPtr, main_str_len+string_length+1);
-                if (NewPtr == NULL){
-                    free(MainStrPtr);
-                    return NULL;
-                }
-                MainStrPtr = NewPtr;
-
-                //copy string and place null byte.
-                strncpy(MainStrPtr+main_str_len, StringFromJson, string_length);
-                *(MainStrPtr+main_str_len+string_length) = '\0';
-
-                MainStrPtr = extend_with_chars(MainStrPtr, "\"");
-                if (MainStrPtr == NULL){
-                    return NULL;
-                }
-
-                // printf("String currently:%s\n", NewPtr);
-                break;
-            case JSON:
-                printf("json case detected.\n");
-                Json* InsideJson = (Json*)JsonRowPtr->ValuePtr[i];
-                printf("didn't segfault. Inside Json's first row: %p\n", InsideJson->JsonRowPtr);
-                // if (do_pointers_exist(InsideJson) == 0){ //if there is a valid json pointer with valid json row inside the string
-                //     printf("some pointers are null.\n");
-                //     return NULL;
-                // }
-
-                printf("pointers exist.\n");
-                char* NestedJsonPtr = (char*)stringify_json(InsideJson, JsonLevel);
-                if (NestedJsonPtr == NULL){
-                    free(MainStrPtr);
-                    return NULL;
-                }
-                printf("still didn't segfault\n");
-                // MainStrPtr = NewPtr; //this line is wrong, it deletes the previous values of the json, and sets it to the inner json only.
-                MainStrPtr = extend_with_chars(MainStrPtr, NestedJsonPtr);
-                if (MainStrPtr == NULL){
-                    return NULL;
-                }
-
-                break;
-            case BOOL:
-                //TODO: test this
-                int bool_value = *(int*)JsonRowPtr->ValuePtr[i];
-                printf("bool value: %d", bool_value);
-                char* WrittenValuePtr;
-                
-                if (bool_value > 0){ //if true
-                    NewPtr = realloc(MainStrPtr, main_str_len+5);
-                    WrittenValuePtr = calloc(5, 1);
-                    if (NewPtr == NULL || WrittenValuePtr == NULL){
-                        return NULL;
-                    }
-
-                    strcpy(WrittenValuePtr, "true");
-                }
-                else { //if false
-                    NewPtr = realloc(MainStrPtr, main_str_len+6);
-                    WrittenValuePtr = calloc(6, 1);
-                    if (NewPtr == NULL || WrittenValuePtr == NULL){
-                        return NULL;
-                    }
-
-                    strcpy(WrittenValuePtr, "false");
-                }
-
-                MainStrPtr = NewPtr;
-
-                //extend main ptr
-                strcpy(MainStrPtr+main_str_len, WrittenValuePtr);
-
-                free(WrittenValuePtr);
-
-                break;
-            default:
-                free(MainStrPtr);
-                NewPtr = NULL;
-                MainStrPtr = NULL;
-                printf("default case reached\n");
-                break;
+    //boolean checking
+    else if (strncmp(StringPtr, (char*)"true", 4) == 0){
+        printf("found boolean. the value is true\n");
+        Main_Obj->Object_Dtype = BOOLEAN;
+        bool* bool_ptr = malloc(sizeof(bool)); //TODO: make this safe
+        *bool_ptr = 1;
+        Main_Obj->Value_s = (void*) bool_ptr;
+        shift_bytes(StringPtr, 4);
+    }
+    else if (strncmp(StringPtr, (char*)"false", 5) == 0){
+        printf("found boolean. the value is false\n");
+        Main_Obj->Object_Dtype = BOOLEAN;
+        bool* bool_ptr = malloc(sizeof(bool)); //TODO: make this safe
+        *bool_ptr = 0;
+        Main_Obj->Value_s = (void*) bool_ptr;
+        shift_bytes(StringPtr, 5);
+    }
+    //string checking
+    else if (StringPtr[0] == '"'){
+        printf("string is likely found\n");
+        int string_len = 0;
+        bool is_escaped = false;
+        //loop until the string the following is true: string contains a " and is not escaped
+        for (int i=1; !(StringPtr[i] == '\"' && !is_escaped); i++){
+            if (StringPtr[i] == '\\'){
+                printf("next character is an escaped one.\n");
+                is_escaped = true;
+            }
+            else {
+                // printf("%c", StringPtr[i]);
+                is_escaped = false;
+            }
+            string_len++;
         }
-        if (IsList == 1 && i != JsonRowPtr->len-1){
-            MainStrPtr = extend_with_chars(MainStrPtr, ", ");
-            if (MainStrPtr == NULL){
-                printf("main string extension failed.\n");
+        // printf("\n");
+        char* Parsed_Str = malloc(string_len+1);
+        if (Parsed_Str == NULL){
+            free(Main_Obj);
+            return NULL;
+        }
+        
+        //copy the actual characters (and not the quotation marks only [that's why StringPtr is incremented])
+        memcpy(Parsed_Str, StringPtr+1, string_len);
+        Parsed_Str[string_len] = '\0';
+
+        printf("string len after calculation: %d\n", string_len);
+        
+        
+        Main_Obj->Object_Dtype = STRING;
+        Main_Obj->Value_s = (void*)Parsed_Str;
+        printf("string found: %s\n", (char*)Main_Obj->Value_s);
+
+        shift_bytes(StringPtr, string_len+2); //+2 because of the " characters
+    }
+    //list checking
+    else if (StringPtr[0] == '['){
+        printf("list is likely found\n");
+        struct JS_Object* Sub_Data = malloc(sizeof(struct JS_Object));
+        int i = 0;
+        bool separator_is_next = false;
+        while (*(StringPtr+1) != ']'){ //loop until al the list elements are parsed
+            struct JS_Object* Parsed_Data = String_Parsing(StringPtr+1);
+            if (Parsed_Data == NULL){
+                printf("Parsing one of the list elements failed. Returned NULL\n");
+                free(Main_Obj);
+                free(Sub_Data);
+                return NULL;
+            }
+            else if ((Parsed_Data == (struct JS_Object*)(-2)) && separator_is_next){ //if it's not null but -2, it can be correct, since it marks a comma
+                printf("comma found. That is a legit separator in lists.\n");
+                // free(Sub_Data);
+                separator_is_next = false;
+            }
+            else if (Parsed_Data == (struct JS_Object*)(-1)){
+                printf("List can't have colons instead of commas!\n");
+                free(Main_Obj);
+                free(Sub_Data);
+                return NULL;
+            }
+            else if (Parsed_Data == (struct JS_Object*)(-3)){
+                printf("General formatter found\n");
+                // free(Sub_Data);
+            }
+            else { //if data is correct
+                //in case of first value, no need for realloc
+                if (i == 0){
+                    printf("parsed data pointer: %p, Sub data pointer: %p\n", Parsed_Data, Sub_Data);
+                    Sub_Data->Object_Dtype = Parsed_Data->Object_Dtype;
+                    Sub_Data->Keys = Parsed_Data->Keys;
+                    Sub_Data->Value_Length = Parsed_Data->Value_Length;
+                    Sub_Data->Value_s = Parsed_Data->Value_s;
+                    // free(Parsed_Data);
+                }
+                else {
+                    printf("parsed data pointer: %p, Sub data pointer: %p\n", Parsed_Data, Sub_Data);
+                    Sub_Data = append_to_JS_object_list(Sub_Data, Parsed_Data, i);
+                    if (Sub_Data == NULL){
+                        printf("function failed.\n");
+                        return NULL;
+                    }
+                    free(Parsed_Data);
+                }
+                
+                i++;
+                separator_is_next = true;
+            }
+            
+            if (i > ITER_MAX){
+                printf("Iteration exceeds %d. Returning...\n", ITER_MAX);
+                free(Main_Obj);
+                free(Sub_Data);
                 return NULL;
             }
         }
-    }
-
-    if (IsList == 1){
-        MainStrPtr = extend_with_chars(MainStrPtr, "]");
-        if (MainStrPtr == NULL){
-            printf("main string extension failed.\n");
-            return NULL;
-        }
-    }
-
-    return MainStrPtr;
-}
-
-char* add_key_to_string(char* MainStrPtr, JsonRow* JsonRowPtr){
-    printf("function started. String it brought with itself: %s\n", MainStrPtr);
-    if (JsonRowPtr == NULL || JsonRowPtr->KeyPtr == NULL){
-        printf("pointers are null.\n");
-        return NULL;
-    }
-
-    MainStrPtr = extend_with_chars(MainStrPtr, "\"");
-    if (MainStrPtr == NULL){
-        return NULL;
-    }
-
-    int key_length = strlen(JsonRowPtr->KeyPtr);
-    int str_length = strlen(MainStrPtr);
-    printf("strlen done. \n");
-    
-
-    char* NewPtr = realloc(MainStrPtr, key_length+str_length+1);
-    printf("realloc ran\n");
-    if (NewPtr == NULL){
-        return NULL;
-    }
-
-    strncpy(NewPtr+str_length, JsonRowPtr->KeyPtr, key_length);
-    NewPtr[str_length+key_length] = '\0'; //add null byte
-
-    NewPtr = extend_with_chars(NewPtr, "\"");
-    if (NewPtr == NULL){
-        return NULL;
-    }
-
-
-    return NewPtr;
-
-
-}
-
-
-
-char* stringify_json(Json* JsonPtr, int JsonLevel){
-    char* PaddingPtr = malloc(JsonLevel+1);
-    for (int j=0; j<JsonLevel; j++){PaddingPtr[j]='\t';}
-    PaddingPtr[JsonLevel] = '\0';
-    char* MainStrPtr = malloc(3);
-    if (MainStrPtr == NULL){
-        printf("initial string malloc failed.\n");
-        return NULL;
-    }
-    *MainStrPtr = '{';
-    MainStrPtr[1] = '\n';
-    MainStrPtr[2] = '\0';
-
-    if (MainStrPtr == NULL){
-        return NULL;
-    }
-
-    //if there is no JsonPtr, or if there is no json row, return an empty json.
-    if (do_pointers_exist(JsonPtr) == 0){
-        char* EndStrPtr = realloc(MainStrPtr, 3);
-        if (EndStrPtr != NULL){
-            EndStrPtr[1] = '}';
-            EndStrPtr[2] = '\0'; 
-        }
-        return EndStrPtr;
-    }
-
-    char* PtrStorage = 0;
-
-    PtrStorage = MainStrPtr;
-    printf("ptrstorage right now: %s\n", PtrStorage);
-
-    //add padding based on the level of the json.
-    
-    
-
-    for (int i=0; i<JsonPtr->len; i++){
-
-        char* StrWithPadding = extend_with_chars(PtrStorage, PaddingPtr);
-
-        char* StrWithKey = add_key_to_string(StrWithPadding, JsonPtr->JsonRowPtr+i); //the entire row pointer is taken
-        if (StrWithKey == NULL){
-            printf("adding key's string to stringified json failed.\n");
-            continue;
-        }
-        printf("key added to string.\n");
-
-        char* StrWithColon = extend_with_chars(StrWithKey, ":");
-        if (StrWithColon == NULL){
-            printf("allocating 1 extra byte failed.\n");
-            return NULL;
-        }
-
-        printf("colon added to string.\n");
-
-        char* StrWithValue = realloc_string_based_on_value_type(StrWithColon, JsonPtr->JsonRowPtr+i, JsonLevel+1);
-        if (StrWithValue == NULL){
-            printf("String value calculation failed.\n");
-            return NULL;
-        }
-
-        printf("value added to string: %s\n\n", StrWithValue);
-
-        char* StrWithComma = extend_with_chars(StrWithValue, ",\n");
-        if (StrWithComma == NULL){
-            printf("allocating 2 extra bytes failed.\n");
-            return NULL;
-        }
-        printf("str with comma: %s\n\n", StrWithComma);
-
-        int len = strlen(StrWithComma);
-        printf("len: %d\n", len);
-        // free(PtrStorage);
-        PtrStorage = malloc(len+1);
-        if (PtrStorage == NULL){
-            printf("malloc failed for variable PtrStorage.\n");
-            return NULL;
-        }
-        printf("ran\n");
-        strncpy(PtrStorage, StrWithComma, len);
-        PtrStorage[len] = '\0';
-
-        printf("iteration completed. String now: %s\n", PtrStorage);
-
-
+        printf("list parsed.\n");
+        shift_bytes(StringPtr, 2);
+        Main_Obj->Object_Dtype = LIST;
+        Main_Obj->Value_Length = i;
+        Main_Obj->Value_s = (void*)Sub_Data;
         
     }
-    
-    char* FinalStr;
-    FinalStr = extend_with_chars(PtrStorage, PaddingPtr);
-    if (FinalStr == NULL){
-        return NULL;
-    }
-    if (JsonLevel > 0){
-        FinalStr = extend_with_chars(FinalStr, "}");
-        if (FinalStr == NULL){
-            return NULL;
+
+    else if (StringPtr[0] == '{'){
+        printf("JSON format is likely found\n");
+        struct JS_Object* Sub_Data = malloc(sizeof(struct JS_Object));
+        char** Keys_List = malloc(sizeof(char*));
+        //i is incremented only when encountering values.
+        int i = 0;
+        bool Key_is_next = true;
+        while (*(StringPtr+1) != '}'){
+            struct JS_Object* Parsed_Data = String_Parsing(StringPtr+1);
+            if (Parsed_Data == NULL){
+                printf("string parsing failed inside JSON parser.\n");
+                return NULL;
+            }
+            if (Parsed_Data == ((struct JS_Object*)(void*)(-1)) || Parsed_Data == (struct JS_Object*)(void*)(-2)){
+                //TODO: implement normal check for the right formatter.\n
+                printf("formatter found in JSON-reader loop.\n");
+                continue;
+            }
+            else if (Parsed_Data == (struct JS_Object*)(-3)){
+                printf("General formatter found\n");
+                continue;
+            }
+
+            else if (Key_is_next){
+                if (Parsed_Data->Object_Dtype != STRING){
+                    printf("Key would be next, got something with an other type.\n");
+                    free(Main_Obj);
+                    free(Parsed_Data);
+                    return NULL;
+                }
+                //in the case of the first value, no need for realloc
+                if (i == 0){
+                    Keys_List[0] = (char*)Parsed_Data->Value_s;
+                }
+                else {
+                    printf("prev Key: %s\n", ((char**)Keys_List)[i-1]);
+                    printf("next size: %d\n", i+1);
+                    Keys_List = realloc(Keys_List, i*sizeof(char*)+sizeof(char*)); //add an extra pointer space
+                    printf("re-bruh alloc\n");
+
+                    Keys_List[i] = (char*)Parsed_Data->Value_s;
+                }
+                
+                // Sub_Data = append_to_JS_object_list(Sub_Data, Parsed_Data, i);
+                printf("the next element has to be a colon\n");
+                Key_is_next = false;
+            }
+            else {
+                if (i == 0){ //no need for realloc in the first filling of the sub-data
+                    Sub_Data->Object_Dtype = Parsed_Data->Object_Dtype;
+                    Sub_Data->Keys = Parsed_Data->Keys;
+                    Sub_Data->Value_Length = Parsed_Data->Value_Length;
+                    Sub_Data->Value_s = Parsed_Data->Value_s;
+                }
+                else {
+                    Sub_Data = append_to_JS_object_list(Sub_Data, Parsed_Data, i);
+                    if (Sub_Data == NULL){
+                        free(Parsed_Data);
+                        free(Main_Obj);
+                        printf("Reallocing sub-data failed.\n");
+                        return NULL;
+                    }
+                }
+                
+
+                free(Parsed_Data);
+                i++;
+                Key_is_next = true;
+            }
         }
+        Main_Obj->Object_Dtype = JSON;
+        Keys_Ptr = Keys_List;
+        Main_Obj->Value_Length = i;
+        Main_Obj->Value_s = Sub_Data;
+        shift_bytes(StringPtr, 2);        
     }
-        
-    else{
-        FinalStr = extend_with_chars(PtrStorage, "}\n");
-        if (FinalStr == NULL){
-            return NULL;
-        }
+    else if (StringPtr[0] == ':'){
+        free(Main_Obj);
+        printf("colon found\n");
+        shift_bytes(StringPtr, 1);
+        return (struct JS_Object*)((void*)(-1));
     }
-        
-    if (FinalStr == NULL){
-        printf("allocating 2 extra bytes failed.\n");
+    else if (StringPtr[0] == ','){
+        free(Main_Obj);
+        printf("comma found\n");
+        shift_bytes(StringPtr, 1);
+        return (struct JS_Object*)((void*)(-2));
+    }
+    else if (StringPtr[0] == ' ' || StringPtr[0] == '\n' || StringPtr[0] == '\r' || StringPtr[0] == '\t'){
+        free(Main_Obj);
+        printf("formatter found\n");
+        shift_bytes(StringPtr, 1);
+        return (struct JS_Object*)((void*)(-3)); //-3 for general formatters: char* formatters = " \n\r\t";
+    }
+    else {
+        printf("impossible token received.\n");
         return NULL;
     }
 
-    return FinalStr;
+    Main_Obj->Keys = Keys_Ptr;
 
-    
+    return Main_Obj;
 }
 
-// char* get_keys(Json* JsonPtr){
+struct JS_Object* start_string_parsing(char* RawStr){
+    char* WorkStr = malloc(strlen(RawStr)+1);
+    if (WorkStr == NULL){printf("initial malloc failed.\n");return NULL;};
+    strcpy(WorkStr, RawStr);
+    // WorkStr = remove_formatters_from_non_strings(RawStr);
 
-//     return "";
-// }
+    // printf("Raw JSON-string parsed: %s\n", WorkStr);
+    // Verbose_String_Parsing(WorkStr);
+    struct JS_Object* Parsed_Json = String_Parsing(WorkStr);
+    
 
-// Json* remove_key(Json* JsonPtr, char* KeyPtr){
+    return Parsed_Json;
+}
 
-// }
+char* Convert_To_String(struct JS_Object* InputObj);
 
-// void free_json(Json* JsonPtr){
 
-// }
+char* Convert_Primitive_To_String(struct JS_Object* InputObj){
+    char* ReturnVal;
+    if (InputObj == NULL){
+        printf("null\n");
+        return NULL;
+    }
+    printf("Objects' Dtype: %d\n", InputObj->Object_Dtype);
+    
+    switch (InputObj->Object_Dtype){
+        case JS_NULL:
+            ReturnVal = malloc(5);
+            strcpy(ReturnVal, "null");
+            return ReturnVal;
+        case NUMBER:
+            int num_length = snprintf(NULL, 0, "%lf", *(double*)InputObj->Value_s); 
+            ReturnVal = malloc(num_length+1);
+            snprintf(ReturnVal, num_length, "%lf", *(double*)InputObj->Value_s);
+            printf("parsed number: %s\n", ReturnVal);
+            return ReturnVal;
+        case BOOLEAN:
+            printf("Objects' Value: %d\n", *(bool*)InputObj->Value_s);
+            printf("%d\n", *(bool*)InputObj->Value_s);
+            if (*(bool*)InputObj->Value_s == 0){
+                ReturnVal = malloc(6);
+                strcpy(ReturnVal, "false");
+            }
+            else {
+                ReturnVal = malloc(5);
+                strcpy(ReturnVal, "true");
+            }
+            printf("received boolean: %s\n", ReturnVal);
+            return ReturnVal;
+        case STRING:
+            int string_len = strlen((char*)InputObj->Value_s) + 3; //+3 for the 2 quotation marks and the null-terminator
+            ReturnVal = malloc(string_len+3);
+            ReturnVal[0] = '"';
+            strncpy(ReturnVal+1, InputObj->Value_s, string_len-2);
+            ReturnVal[string_len-2] = '"';
+            ReturnVal[string_len-1] = '\0';
+            return ReturnVal;
+        default:
+            printf("non-primitive dtype.\n");
+            return NULL;
+    };
+
+}
+
+char* Convert_List_To_String(struct JS_Object* List_Object){
+    if (List_Object->Object_Dtype != LIST){
+        printf("won't convert non-lists to lists\n");
+        return NULL;
+    }
+    char* Return_Str = malloc(2);
+    strcpy(Return_Str, "[");
+    // int return_len = 0;
+    for (unsigned int i=0; i<List_Object->Value_Length; i++){
+        char* CurrentElementStr = Convert_To_String(((struct JS_Object*)List_Object->Value_s+i));
+        if (CurrentElementStr == NULL){
+            printf("List's element's conversion failed.\n");
+            return NULL;
+        }
+        Return_Str = extend_with_chars(Return_Str, CurrentElementStr);
+
+        //add a comma if there are other list elements
+        if (i < List_Object->Value_Length-1)
+            Return_Str = extend_with_chars(Return_Str, ", ");
+
+        //call the convert_to_string on each one (that will redirect to Convert_Primitive_To_String as well)
+    }
+
+    Return_Str = extend_with_chars(Return_Str, "]");
+
+    return Return_Str;
+}
+
+
+
+
+//this handles JSON-type objects
+char* Convert_To_String(struct JS_Object* InputObj){
+    char* Return_Str;
+    if (InputObj->Object_Dtype == JSON){
+        Return_Str = malloc(3);
+        strcpy(Return_Str, "{");
+        for (unsigned int i=0; i<InputObj->Value_Length; i++){
+            printf("JSON to string conversion started.\n");
+            //TODO: check if the keys & values are valid
+            printf("key: %s\n", InputObj->Keys[i]);
+            Return_Str = extend_with_chars(Return_Str, "\""); //starting quotation mark
+            Return_Str = extend_with_chars(Return_Str, InputObj->Keys[i]);
+            Return_Str = extend_with_chars(Return_Str, "\""); //ending quotation mark
+            Return_Str = extend_with_chars(Return_Str, " : ");
+            
+            
+            struct JS_Object* Current_Obj = ((struct JS_Object* )InputObj->Value_s)+i;
+            printf("type of js object: %d\n", Current_Obj->Object_Dtype);
+            char* Obj_Str = Convert_To_String(Current_Obj);
+            Return_Str = extend_with_chars(Return_Str, Obj_Str);
+            free(Obj_Str);
+
+            if (i < InputObj->Value_Length-1)
+                Return_Str = extend_with_chars(Return_Str, ", ");
+
+        }
+
+        Return_Str = extend_with_chars(Return_Str, "}");
+    }
+    else if (InputObj->Object_Dtype == LIST){
+        printf("list to string conversion started.\n");
+        Return_Str = Convert_List_To_String(InputObj);
+    }
+    else {
+        printf("primitive to string conversion started.\n");
+        Return_Str = Convert_Primitive_To_String(InputObj);
+    }
+    return Return_Str;
+}

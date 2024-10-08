@@ -1,6 +1,8 @@
 {
     "files.associations": {
+        "*.rmd": "markdown",
         "*.embeddedhtml": "html",
-        "json.h": "c"
+        "json.h": "c",
+        "rfc_8259_encoder.h": "c"
     }
 }

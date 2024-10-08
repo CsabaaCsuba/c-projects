@@ -1,0 +1,24 @@
+step 1:
+    -infer data type
+        -> if primitive, create JSON with that type
+        -> if list, infer the type of each of it's elements
+        -> if JSON, start parsing the keys, and the data types
+
+
+JS_Object struct:
+    if, the Dtype is NULL, nothing else matters.
+    if the Dtype is a NUMBER, the void pointer should be cast to a double pointers
+    if the Dtype is Boolean, the void pointer should be cast to an bool pointer
+        #define bool unsigned char
+        #define false 0
+        #define true 1
+    if the Dtype is a STRING, the void pointer should be cast to a char array
+    if the Dtype is a LIST, the void pointer should be cast to a pointer (array) of JS_Objects
+    if the Dtype is JSON, ONLY THEN does the Keys field matter. the void pointer should be casted to a pointer (array) of JS_Objects
+
+
+TODO: Write a JSON to string converter
+    - it should iterate through each JSON object, and their values with their lengths. The type inference will be easy.
+
+String parsing:
+loop until DOUBLE QUOTATION MARK,
