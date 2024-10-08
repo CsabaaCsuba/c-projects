@@ -340,10 +340,12 @@ char* Convert_Primitive_To_String(struct JS_Object* InputObj){
             printf("received boolean: %s\n", ReturnVal);
             return ReturnVal;
         case STRING:
-            int string_len = strlen((char*)InputObj->Value_s);
-            ReturnVal = malloc(string_len+1);
-            strncpy(ReturnVal, InputObj->Value_s, string_len);
-            ReturnVal[string_len] = '\0';
+            int string_len = strlen((char*)InputObj->Value_s) + 3; //+3 for the 2 quotation marks and the null-terminator
+            ReturnVal = malloc(string_len+3);
+            ReturnVal[0] = '"';
+            strncpy(ReturnVal+1, InputObj->Value_s, string_len-2);
+            ReturnVal[string_len-2] = '"';
+            ReturnVal[string_len-1] = '\0';
             return ReturnVal;
         default:
             printf("non-primitive dtype.\n");
@@ -375,7 +377,7 @@ char* Convert_List_To_String(struct JS_Object* List_Object){
         //call the convert_to_string on each one (that will redirect to Convert_Primitive_To_String as well)
     }
 
-    Return_Str = extend_with_chars(Return_Str, "]\n");
+    Return_Str = extend_with_chars(Return_Str, "]");
 
     return Return_Str;
 }
@@ -388,13 +390,16 @@ char* Convert_To_String(struct JS_Object* InputObj){
     char* Return_Str;
     if (InputObj->Object_Dtype == JSON){
         Return_Str = malloc(3);
-        strcpy(Return_Str, "{\n");
+        strcpy(Return_Str, "{");
         for (unsigned int i=0; i<InputObj->Value_Length; i++){
             printf("JSON to string conversion started.\n");
             //TODO: check if the keys & values are valid
             printf("key: %s\n", InputObj->Keys[i]);
+            Return_Str = extend_with_chars(Return_Str, "\""); //starting quotation mark
             Return_Str = extend_with_chars(Return_Str, InputObj->Keys[i]);
+            Return_Str = extend_with_chars(Return_Str, "\""); //ending quotation mark
             Return_Str = extend_with_chars(Return_Str, " : ");
+            
             
             struct JS_Object* Current_Obj = ((struct JS_Object* )InputObj->Value_s)+i;
             printf("type of js object: %d\n", Current_Obj->Object_Dtype);
@@ -403,11 +408,11 @@ char* Convert_To_String(struct JS_Object* InputObj){
             free(Obj_Str);
 
             if (i < InputObj->Value_Length-1)
-                Return_Str = extend_with_chars(Return_Str, ",\n");
+                Return_Str = extend_with_chars(Return_Str, ", ");
 
         }
 
-        Return_Str = extend_with_chars(Return_Str, "\n}");
+        Return_Str = extend_with_chars(Return_Str, "}");
     }
     else if (InputObj->Object_Dtype == LIST){
         printf("list to string conversion started.\n");
