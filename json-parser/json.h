@@ -309,6 +309,7 @@ char* Convert_To_String(struct JS_Object* InputObj);
 
 char* Convert_Primitive_To_String(struct JS_Object* InputObj){
     char* ReturnVal;
+    int data_len;
     if (InputObj == NULL){
         printf("null\n");
         return NULL;
@@ -321,9 +322,9 @@ char* Convert_Primitive_To_String(struct JS_Object* InputObj){
             strcpy(ReturnVal, "null");
             return ReturnVal;
         case NUMBER:
-            int num_length = snprintf(NULL, 0, "%lf", *(double*)InputObj->Value_s); 
-            ReturnVal = malloc(num_length+1);
-            snprintf(ReturnVal, num_length, "%lf", *(double*)InputObj->Value_s);
+            data_len = snprintf(NULL, 0, "%lf", *(double*)InputObj->Value_s); 
+            ReturnVal = malloc(data_len+1);
+            snprintf(ReturnVal, data_len, "%lf", *(double*)InputObj->Value_s);
             printf("parsed number: %s\n", ReturnVal);
             return ReturnVal;
         case BOOLEAN:
@@ -340,12 +341,12 @@ char* Convert_Primitive_To_String(struct JS_Object* InputObj){
             printf("received boolean: %s\n", ReturnVal);
             return ReturnVal;
         case STRING:
-            int string_len = strlen((char*)InputObj->Value_s) + 3; //+3 for the 2 quotation marks and the null-terminator
-            ReturnVal = malloc(string_len+3);
+            data_len = strlen((char*)InputObj->Value_s) + 3; //+3 for the 2 quotation marks and the null-terminator
+            ReturnVal = malloc(data_len+3);
             ReturnVal[0] = '"';
-            strncpy(ReturnVal+1, InputObj->Value_s, string_len-2);
-            ReturnVal[string_len-2] = '"';
-            ReturnVal[string_len-1] = '\0';
+            strncpy(ReturnVal+1, InputObj->Value_s, data_len-2);
+            ReturnVal[data_len-2] = '"';
+            ReturnVal[data_len-1] = '\0';
             return ReturnVal;
         default:
             printf("non-primitive dtype.\n");

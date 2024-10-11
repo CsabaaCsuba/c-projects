@@ -187,10 +187,17 @@ char* remove_formatters_from_non_strings(char* original){ //remove a list of cha
 
 void shift_bytes(char* str, int amount_to_shift) {
     int len = strlen(str);
-    if (amount_to_shift >= len) {
+    if (amount_to_shift >= len || amount_to_shift == 0) {
         return;
     }
-    memmove(str, str + amount_to_shift, len - amount_to_shift + 1); // +1 for null terminator
+    /*
+    memcpy is not causing undefined behaviour here, because it does this:
+    
+    *addr = *(addr+1)
+    
+    (the number 1 is the amount_to_shift)
+    */
+    memcpy(str, str + amount_to_shift, len - amount_to_shift + 1); // +1 for null terminator
 }
 
 //reallocates the Dest_Ptr to append the contents of the Source_Ptr to it. It DOES NOT free Source_Ptr
