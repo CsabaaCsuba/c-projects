@@ -7,7 +7,7 @@
 
 void assert_eq(struct JS_Object* js_object, char* stringified_json){
     char* other_string = Convert_To_String(js_object);
-    if (strcmp(other_string, stringified_json)){
+    if (strcmp(other_string, stringified_json) == 0){
         printf("succesful assertion for %s.\n", stringified_json);
     }
     else {
@@ -21,6 +21,7 @@ void test1(){
     start_string_parsing("555555555555555.5");
     start_string_parsing("null");
     struct JS_Object* bruh = start_string_parsing("[null, \"anyad\"]");
+    printf("%s\n", Convert_To_String(bruh));
 }
 
 void final_test(){
@@ -72,7 +73,7 @@ void final_test(){
         \"nested_escapes\":\"Line Break\\r\\nAnother Line\" \
     }"
     );
-    printf("\n\n\n%p\n", idk);
+
     printf("%s\n", Convert_To_String(idk)); //converts it back to string
 
     exit(-1);
@@ -81,7 +82,8 @@ void final_test(){
 int main(){
     
 
-
+    test1();
+    final_test();
     
 
 

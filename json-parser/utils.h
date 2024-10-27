@@ -206,7 +206,7 @@ struct JS_Object* append_to_JS_object_list(struct JS_Object* Dest_Ptr, struct JS
         printf("source ptr: %p, dest ptr: %p\n", Dest_Ptr, Source_Ptr);
         return NULL;
     }
-    printf("Object List new size: %d\n", dest_len+1);
+    // printf("Object List new size: %d\n", dest_len+1);
     struct JS_Object* New_Memblock = realloc(Dest_Ptr, sizeof(struct JS_Object)*(dest_len+1));
     if (New_Memblock == NULL){
         printf("malloc for a larger JS_Object memory block failed.\n");
