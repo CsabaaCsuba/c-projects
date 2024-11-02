@@ -14,7 +14,7 @@ This number will then be used as the index in the hash table
 #define true 1
 #define false 0
 
-typedef struct ListNode {
+struct ListNode {
     unsigned int key_len;
     unsigned int value_len;
     bool is_empty;
@@ -22,11 +22,15 @@ typedef struct ListNode {
     char* value;
 
     struct ListNode* next;
-} ListNode;
+};
 
-int TABLE_SIZE = 4;
-int BUFF_SIZE = 2048;
-int DEFAULT_SIZE = 128;
+struct Table {
+    size_t table_size;
+    struct ListNode* list;
+
+};
+
+int TABLE_SIZE = 20;
 
 unsigned int hash(char* key){ //simple hashing function returning the idx of the 
     unsigned int hashnum = 0;
@@ -38,9 +42,11 @@ unsigned int hash(char* key){ //simple hashing function returning the idx of the
     return hashnum;
 }
 
-unsigned int get_table_placement(unsigned int hash){
-    return hash % TABLE_SIZE;
+unsigned int get_table_placement(char* key, int found_table_size){
+    unsigned int hashnum = hash(key);
+    return hashnum % TABLE_SIZE;
 }
+
 
 void init_node(struct ListNode* node){
     node->is_empty = true;
@@ -50,19 +56,24 @@ void init_node(struct ListNode* node){
     node->value = NULL;
 }
 
-void init_table(struct ListNode* hashtable, int table_row_count){
+void init_linked_list(struct ListNode* linked_list, int table_row_count){
     for (int i=0; i<table_row_count; i++){
-        init_node(hashtable+i);
+        init_node(linked_list+i);
     }
     printf("table initialized with the size of %d\n", table_row_count);
 }
 
+void init_table(struct Table* linked_list, size_t input_len){
+    struct ListNode* linked_list = malloc(input_len*sizeof(struct ListNode));
+
+}
 
 
-void print_table(struct ListNode* hashtable, int table_row_count){
+
+void print_table(struct ListNode* linked_list, int table_row_count){
     for (int i=0; i<table_row_count; i++){
-        // printf("%d => %s\n", i, hashtable[i].key);
-        struct ListNode* current_node = hashtable+i;
+        // printf("%d => %s\n", i, linked_list[i].key);
+        struct ListNode* current_node = linked_list+i;
         printf("%d. ", i);
         while(true) { //this has to iterate to the end of the nodes
             printf("%s => %s", current_node->key, current_node->value);
@@ -84,7 +95,7 @@ void print_table(struct ListNode* hashtable, int table_row_count){
 void add_to_table(struct ListNode* table, char* key, char* value){
     printf("bruh\n");
     unsigned int table_idx = get_table_placement(hash(key));
-    printf("table idx: %d\n", table_idx);
+    printf("table idx: %u\n", table_idx);
     struct ListNode* current_node = table+table_idx;
     printf("current node selected\n");
     while (current_node->is_empty != true){ //go through the "bucket" until the first unused "slot" has been found
@@ -94,7 +105,7 @@ void add_to_table(struct ListNode* table, char* key, char* value){
         }
         current_node = current_node->next; //on the next iteration, it's gona check the current_node anyway
     }
-    printf("while loop done\n");
+    printf("while loop done\n");//meow
     size_t key_len = strlen(key)+1;
     size_t value_len = strlen(value)+1;
 
@@ -125,7 +136,7 @@ void* clone(void* ptr, unsigned int length_in_bytes){
         printf("received ptr was null.\n");
         return NULL;
     }
-    void* new_memspace = calloc(length_in_bytes, 1);
+    void* new_memspace = malloc(length_in_bytes);
     memcpy(new_memspace, ptr, length_in_bytes);
     return new_memspace;
 
@@ -167,31 +178,31 @@ void remove_from_table(struct ListNode* table, char* key){
 }
 
 int main(){
-    // char** hashtable = malloc(TABLE_SIZE*sizeof(char*));
-    struct ListNode* hashtable = malloc(TABLE_SIZE*sizeof(ListNode));
+    // char** linked_list = malloc(TABLE_SIZE*sizeof(char*));
+    struct ListNode* linked_list = malloc(TABLE_SIZE*sizeof(struct ListNode));
 
-    init_table(hashtable, TABLE_SIZE);
+    init_table(linked_list, TABLE_SIZE);
 
-    add_to_table(hashtable, "John", "Pork");
+    add_to_table(linked_list, "John", "Pork");
 
-    add_to_table(hashtable, "Kai", "Cenat");
+    add_to_table(linked_list, "Kai", "Cenat");
 
-    add_to_table(hashtable, "apple", "banana");
+    add_to_table(linked_list, "apple", "banana");
 
-    add_to_table(hashtable, "a", "b");
+    add_to_table(linked_list, "a", "b");
 
-    add_to_table(hashtable, "halo", "szia");
+    add_to_table(linked_list, "halo", "szia");
 
-    print_table(hashtable, TABLE_SIZE);
+    print_table(linked_list, TABLE_SIZE);
 
-    remove_from_table(hashtable, "halo");
+    remove_from_table(linked_list, "halo");
 
-    printf("Value of John: %s\n", get_from_table(hashtable, "John"));
+    printf("Value of John: %s\n", get_from_table(linked_list, "John"));
 
-    remove_from_table(hashtable, "John");
+    remove_from_table(linked_list, "John");
 
-    printf("Value of halo: %s\n", get_from_table(hashtable, "halo"));
+    printf("Value of halo: %s\n", get_from_table(linked_list, "halo"));
 
-    print_table(hashtable, TABLE_SIZE);
+    print_table(linked_list, TABLE_SIZE);
     return 0;
 }
