@@ -7,7 +7,10 @@ Then the hash gets "modulod" with the hash table size,
 resulting in a number that is smaller than the length of the hash table.
 This number will then be used as the index in the hash table
 
+Weakness: this can't do anything in case of hash collisions
+
 */
+
 
 const unsigned int TABLE_SIZE = 32;
 const unsigned int BUFF_SIZE = 2048;
@@ -22,8 +25,9 @@ unsigned int hash(char* key){ //simple hashing function returning the idx of the
     return hashnum;
 }
 
-unsigned int get_table_placement(unsigned int hash){
-    return hash % TABLE_SIZE;
+unsigned int get_table_placement(char* key){
+    unsigned int hash_value = hash(key);
+    return hash_value % TABLE_SIZE;
 }
 
 void init_table(char hashtable[TABLE_SIZE][BUFF_SIZE], int table_row_count){
@@ -40,14 +44,21 @@ void print_table(char hashtable[TABLE_SIZE][BUFF_SIZE], int table_row_count){
 }
 
 void add_to_table(char table[TABLE_SIZE][BUFF_SIZE], char* key, char* value){
-    unsigned int table_idx = get_table_placement(hash(key));
+    unsigned int table_idx = get_table_placement(key);
     strncpy(table[table_idx], value, BUFF_SIZE-1);
     table[table_idx][BUFF_SIZE-1] = '\0'; //so string ends at the end of BUFF_SIZE
 }
 
 char* get_from_table(char table[TABLE_SIZE][BUFF_SIZE], char* key){
-    unsigned int idx = get_table_placement(hash(key));
+    unsigned int idx = get_table_placement(key);
     return table[idx];
+}
+
+void remove_from_table(char table[TABLE_SIZE][BUFF_SIZE], char* key){
+    unsigned int idx = get_table_placement(key);
+    if (table[idx][0] != '\0'){ //if it's not zero, set it back to zero
+        table[idx][0] = '\0';
+    }
 }
 
 int main(){
