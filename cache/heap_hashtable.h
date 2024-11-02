@@ -29,7 +29,7 @@ struct Table {
     struct ListNode* list;
 };
 
-int TABLE_SIZE = 4;
+size_t TABLE_SIZE = 4;
 
 size_t hash(char* key){ //simple hashing function returning the idx of the 
     size_t hashnum = 0;
@@ -42,7 +42,7 @@ size_t hash(char* key){ //simple hashing function returning the idx of the
 }
 
 unsigned int get_table_placement(char* key, size_t found_table_size){
-    size_t hashnum = hash(key);
+    register size_t hashnum = hash(key);
     return hashnum % found_table_size;
 }
 
@@ -64,7 +64,7 @@ void init_linked_list(struct ListNode* linked_list, int table_row_count){
 }
 
 void init_table(struct Table* table, size_t input_len){
-    struct ListNode* linked_list = malloc(input_len*sizeof(struct ListNode));
+    struct ListNode* linked_list = (struct ListNode*)malloc(input_len*sizeof(struct ListNode));
     init_linked_list(linked_list, input_len);
     table->list = linked_list;
     table->table_size = input_len;
@@ -122,7 +122,7 @@ void set_key(struct Table* table, char* key, char* value){
         if (current_node->next == NULL){ //if the next key would be null
             if (filled_node == NULL){ //if an empty node has not been found, allocate a new one which will be used
                 printf("filled node is a node that is just created\n");
-                current_node->next = malloc(sizeof(struct ListNode));
+                current_node->next = (struct ListNode*)malloc(sizeof(struct ListNode));
                 init_node(current_node->next);
                 filled_node = current_node->next;
                 break;
@@ -143,12 +143,12 @@ void set_key(struct Table* table, char* key, char* value){
     if (filled_node->key != NULL){ //if there is any previous key, free it's space
         free(filled_node->key);
     }
-    filled_node->key = malloc(key_len);
+    filled_node->key = (char*)malloc(key_len);
 
     if (filled_node->value != NULL){ //if there is any previous value, free it's space
         free(filled_node->value);
     }
-    filled_node->value = malloc(value_len);
+    filled_node->value = (char*)malloc(value_len);
     printf("malloc done\n");
     filled_node->key_len = key_len;
     filled_node->value_len = value_len;
@@ -179,7 +179,7 @@ char* get_from_table(struct Table* table, char* key){
     while (right_node != NULL){
         if (right_node->key != NULL){ //if the current element of the node is not null
             if (strcmp(right_node->key, key) == 0){
-                return clone(right_node->value, right_node->value_len); //return a copied value, so use-after-free can't happen
+                return (char*)clone(right_node->value, right_node->value_len); //return a copied value, so use-after-free can't happen
             }
         }
         right_node = right_node->next;
@@ -206,44 +206,4 @@ void remove_from_table(struct Table* table, char* key){
         }
         right_node = right_node->next;
     }
-}
-
-int main(){
-    // char** linked_list = malloc(TABLE_SIZE*sizeof(char*));
-    struct Table* table = malloc(TABLE_SIZE*sizeof(struct Table));
-
-    init_table(table, TABLE_SIZE);
-
-    set_key(table, "John", "Pork");
-
-    set_key(table, "Kai", "Cenat");
-
-    set_key(table, "apple", "banana");
-
-    set_key(table, "a", "b");
-
-    set_key(table, "halo", "szia");
-
-    set_key(table, "bruh", "asd");
-
-    // print_table(table, TABLE_SIZE);
-
-    remove_from_table(table, "halo"); //removing halo to then replace it
-
-    // printf("Value of John: %s\n", get_from_table(table, "John"));
-
-    // set_key(table, "halo", "hi");
-
-    // remove_from_table(table, "John");
-
-    set_key(table, "hoho", "asd");
-
-    set_key(table, "John", "Bro");
-
-    printf("Value of halo: %s\n", get_from_table(table, "halo"));
-
-    set_key(table, "a", "c");
-
-    print_table(table, TABLE_SIZE);
-    return 0;
 }

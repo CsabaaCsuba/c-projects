@@ -29,7 +29,7 @@ struct Table {
     struct ListNode* list;
 };
 
-int TABLE_SIZE = 4;
+size_t TABLE_SIZE = 4;
 
 size_t hash(char* key){ //simple hashing function returning the idx of the 
     size_t hashnum = 0;
@@ -74,6 +74,10 @@ void init_table(struct Table* table, size_t input_len){
 
 void print_table(struct Table* table, int table_row_count){
     for (int i=0; i<table_row_count; i++){
+        if (table->list[i].is_empty == true){
+            continue; //just in case of big numbers
+        }
+
         // printf("%d => %s\n", i, table[i].key);
         struct ListNode* current_node = table->list+i;
         printf("%d. ", i);
