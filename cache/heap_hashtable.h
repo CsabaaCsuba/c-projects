@@ -29,7 +29,6 @@ struct Table {
     struct ListNode* list;
 };
 
-size_t TABLE_SIZE = 4;
 
 size_t hash(char* key){ //simple hashing function returning the idx of the 
     size_t hashnum = 0;
@@ -76,8 +75,12 @@ void print_table(struct Table* table){
     for (size_t i=0; i<table->table_size; i++){
         // printf("%d => %s\n", i, table[i].key);
         struct ListNode* current_node = table->list+i;
+        if (current_node->is_empty && current_node->next == NULL){
+            continue;
+        }
         printf("%ld. ", i);
         while(true) { //this has to iterate to the end of the nodes
+
             printf("%s => %s", current_node->key, current_node->value);
 
             //for formatting purposes (a do while loop could have been used too)
@@ -95,7 +98,6 @@ void print_table(struct Table* table){
 }
 
 void set_key(struct Table* table, char* key, char* value){
-    printf("key to set: %s\n", key);
     unsigned int table_idx = get_table_placement(key, table->table_size);
     // printf("table idx: %u\n", table_idx);
     struct ListNode* current_node = table->list+table_idx;
@@ -104,9 +106,8 @@ void set_key(struct Table* table, char* key, char* value){
     struct ListNode* filled_node = NULL;
     size_t key_len = strlen(key)+1;
     while(true) { //loop until the key has been found or the first empty node has been found
-        printf("iteration %d\n", i);
         if (current_node->is_empty){ //if current node is empty, a filled_node can be selected
-            printf("empty node found\n");
+            // printf("empty node found\n");
             filled_node = current_node;
             if (current_node->next == NULL){ //if the next node is unallocated, there is no need for allocation since this value can be filled
                 break;
@@ -121,7 +122,6 @@ void set_key(struct Table* table, char* key, char* value){
         }
         if (current_node->next == NULL){ //if the next key would be null
             if (filled_node == NULL){ //if an empty node has not been found, allocate a new one which will be used
-                printf("filled node is a node that is just created\n");
                 current_node->next = (struct ListNode*)malloc(sizeof(struct ListNode));
                 init_node(current_node->next);
                 filled_node = current_node->next;
@@ -136,7 +136,6 @@ void set_key(struct Table* table, char* key, char* value){
 
         i++;
     }
-    printf("while loop done\n");//meow
     
     size_t value_len = strlen(value)+1;
 
@@ -149,13 +148,12 @@ void set_key(struct Table* table, char* key, char* value){
         free(filled_node->value);
     }
     filled_node->value = (char*)malloc(value_len);
-    printf("malloc done\n");
     filled_node->key_len = key_len;
     filled_node->value_len = value_len;
 
     strncpy(filled_node->key, key, key_len-1);
     strncpy(filled_node->value, value, value_len-1);
-    printf("copy done\n");
+
     filled_node->key[key_len-1] = '\0'; //make sure that there is a null terminator
     filled_node->value[value_len-1] = '\0';
     filled_node->is_empty = false;

@@ -76,6 +76,11 @@ void parse_command(char command[BUFSIZ], char command_store[3][KEYWORD_BUFSIZ]){
 
 }
 
+char* strupr(char* base_string){
+    // toupper();
+
+}
+
 void read_and_exec(struct Table* table){
     char buffer[BUFSIZ];
 
@@ -99,6 +104,8 @@ void read_and_exec(struct Table* table){
         }
         parse_command(buffer, command_storage);
     }
+
+    strcpy(command_storage[0], strupr(command_storage[0])); //made the first uppercase
 
     if (strncmp(command_storage[0], "SET", 4) == 0){
         if (command_storage[1][0] == '\0' || command_storage[2][0] == '\0'){
@@ -147,11 +154,13 @@ void read_and_exec(struct Table* table){
     //for now, nothing else is acceptable
 }
 
+const size_t table_size = 4096;
+
 int main(){
     // char** linked_list = malloc(TABLE_SIZE*sizeof(char*));
-    struct Table* table = malloc(TABLE_SIZE*sizeof(struct Table));
+    struct Table* table = malloc(table_size*sizeof(struct Table));
 
-    init_table(table, TABLE_SIZE);
+    init_table(table, table_size);
 
     while (true){
         read_and_exec(table);
