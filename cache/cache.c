@@ -5,6 +5,14 @@
 
 #define KEYWORD_BUFSIZ 2048
 
+void ascii_convert_to_uppercase(char* base_string){
+    for (size_t i=0; i<strlen(base_string); i++){
+        if (base_string[i] >= 97 || base_string[i] <= 122){
+            base_string[i] -= 32;
+        }
+    }
+}
+
 int get_next_keyword(int idx, char command[BUFSIZ], char keyword_addr[KEYWORD_BUFSIZ]){
     char current_keyword[KEYWORD_BUFSIZ] = "";
     int i = 0;
@@ -76,11 +84,6 @@ void parse_command(char command[BUFSIZ], char command_store[3][KEYWORD_BUFSIZ]){
 
 }
 
-char* strupr(char* base_string){
-    // toupper();
-
-}
-
 void read_and_exec(struct Table* table){
     char buffer[BUFSIZ];
 
@@ -104,8 +107,8 @@ void read_and_exec(struct Table* table){
         }
         parse_command(buffer, command_storage);
     }
-
-    strcpy(command_storage[0], strupr(command_storage[0])); //made the first uppercase
+    ascii_convert_to_uppercase(command_storage[0]);
+    // strcpy(command_storage[0], ); //made the first uppercase
 
     if (strncmp(command_storage[0], "SET", 4) == 0){
         if (command_storage[1][0] == '\0' || command_storage[2][0] == '\0'){

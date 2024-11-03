@@ -78,7 +78,7 @@ void print_table(struct Table* table){
         if (current_node->is_empty && current_node->next == NULL){
             continue;
         }
-        printf("%ld. ", i);
+        printf("%ld. ", (unsigned long int)i);
         while(true) { //this has to iterate to the end of the nodes
 
             printf("%s => %s", current_node->key, current_node->value);
