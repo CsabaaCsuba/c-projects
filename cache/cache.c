@@ -86,15 +86,30 @@ void read_and_exec(struct Table* table){
     printf("cache>");
     if (fgets(buffer, BUFSIZ, stdin) != NULL){
         printf("read command: %s", buffer);
-        // printf("\"%c\"", );
-        buffer[strlen(buffer)-1] = '\0';
-        if (parse_command(buffer, command_storage) == -1){
-            printf("execution stopped. error encountered.\n");
+        size_t command_len = strlen(buffer);
+        if (command_len < 7){
+            printf("command too short");
             return;
         }
+        // printf("\"%c\"", );
+        buffer[command_len-1] = '\0'; //remove the newline character
+        if (buffer[command_len-2] == '\r'){ //replace return carriage on windows
+            buffer[command_len-2] = '\0';
+        }
+        if (parse_command(buffer, command_storage) == -1){
+            printf("Command ended.\n");
+        }
     }
-    for (int i = 0; i<3; i++){
-        printf("%s\n", command_storage[i]);
+    // for (int i = 0; i<3; i++){
+    //     printf("%s\n", command_storage[i]);
+    // }
+    if (strcmp(command_storage[0], "SET") == 0){
+        if (strcmp(command_storage[1], "") == 0 || strcmp(command_storage[1], "") == 0){
+            printf("other strings are empty. cannot execute.\n");
+        }
+        else {
+            printf("set command valid\n");
+        }
     }
 
     //TODO: check for syntax: SET/GET/REMOVE key_name value_name
