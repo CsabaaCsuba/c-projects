@@ -72,11 +72,11 @@ void init_table(struct Table* table, size_t input_len){
 
 
 
-void print_table(struct Table* table, int table_row_count){
-    for (int i=0; i<table_row_count; i++){
+void print_table(struct Table* table){
+    for (size_t i=0; i<table->table_size; i++){
         // printf("%d => %s\n", i, table[i].key);
         struct ListNode* current_node = table->list+i;
-        printf("%d. ", i);
+        printf("%ld. ", i);
         while(true) { //this has to iterate to the end of the nodes
             printf("%s => %s", current_node->key, current_node->value);
 
