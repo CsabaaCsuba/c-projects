@@ -163,7 +163,11 @@ int main(){
     // char** linked_list = malloc(TABLE_SIZE*sizeof(char*));
     struct Table* table = malloc(table_size*sizeof(struct Table));
 
+    if (table == NULL){
+        return -1;
+    }
     init_table(table, table_size);
+
 
     while (true){
         read_and_exec(table);

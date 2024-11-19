@@ -123,6 +123,9 @@ void set_key(struct Table* table, char* key, char* value){
         if (current_node->next == NULL){ //if the next key would be null
             if (filled_node == NULL){ //if an empty node has not been found, allocate a new one which will be used
                 current_node->next = (struct ListNode*)malloc(sizeof(struct ListNode));
+                if (current_node->next == NULL){
+                    return;
+                }
                 init_node(current_node->next);
                 filled_node = current_node->next;
                 break;
@@ -166,6 +169,9 @@ void* clone(void* ptr, unsigned int length_in_bytes){
         return NULL;
     }
     void* new_memspace = malloc(length_in_bytes);
+    if (new_memspace == NULL){
+        return NULL;
+    }
     memcpy(new_memspace, ptr, length_in_bytes);
     return new_memspace;
 
