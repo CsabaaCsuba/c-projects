@@ -17,6 +17,6 @@ struct JS_Object{
     // JS_Object** Sub_Values; //an array of pointers, which have the type JS_Object (the last 8 continous 0 bytes stop the pointer list)
     
     void* Value_s; //the length variable describes it's length
-    //it's an "array" of pointers
+    //it's an array -> it can hold more elements
 
 };

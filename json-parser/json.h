@@ -4,291 +4,394 @@
 #define bool unsigned char
 #define false 0
 #define true 1
-#define ITER_MAX 100000
 //#include "typedefs.h"
 
 
+struct JS_Object* General_Parser(char* StringPtr, int* idx);
 
-
-struct JS_Object* String_Parsing(char* StringPtr){ //prints bullshit as it goes
-    if (StringPtr == NULL){
-        // printf("Main parser function's pointer was null.\n");
-        return NULL;
-    }
-    //TODO: create some string checking-handling based on string length
-    //null checking
-    struct JS_Object* Main_Obj = malloc(sizeof(struct JS_Object));
-    Main_Obj->Value_Length = 1;
-    char** Keys_Ptr = NULL;
-    if (strncmp(StringPtr, (char*)"null", 4) == 0){
-        // printf("found value is a javascript-null\n");
-        Main_Obj->Object_Dtype = JS_NULL;
-        Main_Obj->Value_s = NULL;
-        shift_bytes(StringPtr, 4);
-    }
-    //if current character is numeric / starts with a number
-    else if ((StringPtr[0] >= 48 && StringPtr[0] <= 57) || StringPtr[0] == '-'){
-        double* num_storage = malloc(8);
-        if (num_storage == NULL){
-            free(Main_Obj);
-            // printf("number's storer malloc failed.\n");
+struct JS_Object* Parse_Null(char* StringPtr, int* idx){
+    if (strncmp(StringPtr, "null", 4) == 0){
+        struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
+        if (return_obj == NULL) {
             return NULL;
         }
-        int is_num_found = sscanf(StringPtr, "%lf", num_storage);
-        int num_length = 0;
-        //a number can only have 2 dots
-        int dot_count = 0;
-        if (!is_num_found){
-            // printf("There was only a minus sign, but not a number after it.\n");
-            free(Main_Obj);
-            return NULL;
-        }
+        return_obj->Keys = NULL;
+        return_obj->Value_s = NULL;
+        return_obj->Value_Length = 0;
+        return_obj->Object_Dtype = JS_NULL;
+        *idx = *idx + 4;
 
-
-        //NOT NEEDED
-        //while all the characters are valid numeric values (or a dot), or(the loop just starts, and the first character is a minus) the number is valid
-        for(int i=0; ((StringPtr[i] == '-' && i == 0) || (StringPtr[i] >= 48 && StringPtr[i] <= 57) || (StringPtr[i] == '.')) && dot_count < 2;i++){
-            if (StringPtr[i] == '.'){
-                dot_count++;
-            }
-            if (dot_count == 2){
-                // printf("number contains more dots than one. invalid JSON\n");
-                free(Main_Obj);
-                return NULL;
-            }
-            num_length++;   
-        }
-        
-        shift_bytes(StringPtr, num_length);
-        Main_Obj->Object_Dtype = NUMBER;
-        Main_Obj->Value_s = (void*) num_storage;
-    }
-
-    //boolean checking
-    else if (strncmp(StringPtr, (char*)"true", 4) == 0){
-        // printf("found boolean. the value is true\n");
-        Main_Obj->Object_Dtype = BOOLEAN;
-        bool* bool_ptr = malloc(sizeof(bool)); //TODO: make this safe
-        *bool_ptr = 1;
-        Main_Obj->Value_s = (void*) bool_ptr;
-        shift_bytes(StringPtr, 4);
-    }
-    else if (strncmp(StringPtr, (char*)"false", 5) == 0){
-        // printf("found boolean. the value is false\n");
-        Main_Obj->Object_Dtype = BOOLEAN;
-        bool* bool_ptr = malloc(sizeof(bool)); //TODO: make this safe
-        *bool_ptr = 0;
-        Main_Obj->Value_s = (void*) bool_ptr;
-        shift_bytes(StringPtr, 5);
-    }
-    //string checking
-    else if (StringPtr[0] == '"'){
-        // printf("string is likely found\n");
-        int string_len = 0;
-        bool is_escaped = false;
-        //loop until the string the following is true: string contains a " and is not escaped
-        for (int i=1; !(StringPtr[i] == '\"' && !is_escaped); i++){
-            if (StringPtr[i] == '\\'){
-                // printf("next character is an escaped one.\n");
-                is_escaped = true;
-            }
-            else {
-                // printf("%c", StringPtr[i]);
-                is_escaped = false;
-            }
-            string_len++;
-        }
-        // printf("\n");
-        char* Parsed_Str = malloc(string_len+1);
-        if (Parsed_Str == NULL){
-            free(Main_Obj);
-            return NULL;
-        }
-        
-        //copy the actual characters (and not the quotation marks only [that's why StringPtr is incremented])
-        memcpy(Parsed_Str, StringPtr+1, string_len);
-        Parsed_Str[string_len] = '\0';
-
-        // printf("string len after calculation: %d\n", string_len);
-        
-        
-        Main_Obj->Object_Dtype = STRING;
-        Main_Obj->Value_s = (void*)Parsed_Str;
-        // printf("string found: %s\n", (char*)Main_Obj->Value_s);
-
-        shift_bytes(StringPtr, string_len+2); //+2 because of the " characters
-    }
-    //list checking
-    else if (StringPtr[0] == '['){
-        // printf("list is likely found\n");
-        struct JS_Object* Sub_Data = malloc(sizeof(struct JS_Object));
-        int i = 0;
-        bool separator_is_next = false;
-        while (*(StringPtr+1) != ']'){ //loop until al the list elements are parsed
-            struct JS_Object* Parsed_Data = String_Parsing(StringPtr+1);
-            if (Parsed_Data == NULL){
-                printf("Parsing one of the list elements failed. Returned NULL\n");
-                free(Main_Obj);
-                free(Sub_Data);
-                return NULL;
-            }
-            else if ((Parsed_Data == (struct JS_Object*)(-2)) && separator_is_next){ //if it's not null but -2, it can be correct, since it marks a comma
-                // printf("comma found. That is a legit separator in lists.\n");
-                // free(Sub_Data);
-                separator_is_next = false;
-            }
-            else if (Parsed_Data == (struct JS_Object*)(-1)){
-                // printf("List can't have colons instead of commas!\n");
-                free(Main_Obj);
-                free(Sub_Data);
-                return NULL;
-            }
-            else if (Parsed_Data == (struct JS_Object*)(-3)){
-                // printf("General formatter found\n");
-                // free(Sub_Data);
-            }
-            else { //if data is correct
-                //in case of first value, no need for realloc
-                if (i == 0){
-                    // printf("parsed data pointer: %p, Sub data pointer: %p\n", Parsed_Data, Sub_Data);
-                    Sub_Data->Object_Dtype = Parsed_Data->Object_Dtype;
-                    Sub_Data->Keys = Parsed_Data->Keys;
-                    Sub_Data->Value_Length = Parsed_Data->Value_Length;
-                    Sub_Data->Value_s = Parsed_Data->Value_s;
-                    // free(Parsed_Data);
-                }
-                else {
-                    // printf("parsed data pointer: %p, Sub data pointer: %p\n", Parsed_Data, Sub_Data);
-                    Sub_Data = append_to_JS_object_list(Sub_Data, Parsed_Data, i);
-                    if (Sub_Data == NULL){
-                        printf("function failed.\n");
-                        return NULL;
-                    }
-                    free(Parsed_Data);
-                }
-                
-                i++;
-                separator_is_next = true;
-            }
-            
-            if (i > ITER_MAX){
-                printf("Iteration exceeds %d. Returning...\n", ITER_MAX);
-                free(Main_Obj);
-                free(Sub_Data);
-                return NULL;
-            }
-        }
-        // printf("list parsed.\n");
-        shift_bytes(StringPtr, 2);
-        Main_Obj->Object_Dtype = LIST;
-        Main_Obj->Value_Length = i;
-        Main_Obj->Value_s = (void*)Sub_Data;
-        
-    }
-
-    else if (StringPtr[0] == '{'){
-        // printf("JSON format is likely found\n");
-        struct JS_Object* Sub_Data = malloc(sizeof(struct JS_Object));
-        char** Keys_List = malloc(sizeof(char*));
-        //i is incremented only when encountering values.
-        int i = 0;
-        bool Key_is_next = true;
-        while (*(StringPtr+1) != '}'){
-            struct JS_Object* Parsed_Data = String_Parsing(StringPtr+1);
-            if (Parsed_Data == NULL){
-                printf("string parsing failed inside JSON parser.\n");
-                return NULL;
-            }
-            if (Parsed_Data == ((struct JS_Object*)(void*)(-1)) || Parsed_Data == (struct JS_Object*)(void*)(-2)){
-                //TODO: implement normal check for the right formatter.\n
-                // printf("formatter found in JSON-reader loop.\n");
-                continue;
-            }
-            else if (Parsed_Data == (struct JS_Object*)(-3)){
-                // printf("General formatter found\n");
-                continue;
-            }
-
-            else if (Key_is_next){
-                if (Parsed_Data->Object_Dtype != STRING){
-                    printf("Key would be next, got something with an other type.\n");
-                    free(Main_Obj);
-                    free(Parsed_Data);
-                    return NULL;
-                }
-                //in the case of the first value, no need for realloc
-                if (i == 0){
-                    Keys_List[0] = (char*)Parsed_Data->Value_s;
-                }
-                else {
-                    // printf("prev Key: %s\n", ((char**)Keys_List)[i-1]);
-                    // printf("next size: %d\n", i+1);
-                    Keys_List = realloc(Keys_List, i*sizeof(char*)+sizeof(char*)); //add an extra pointer space
-                    // printf("re-bruh alloc\n");
-
-                    Keys_List[i] = (char*)Parsed_Data->Value_s;
-                }
-                
-                // Sub_Data = append_to_JS_object_list(Sub_Data, Parsed_Data, i);
-                // printf("the next element has to be a colon\n");
-                Key_is_next = false;
-            }
-            else {
-                if (i == 0){ //no need for realloc in the first filling of the sub-data
-                    Sub_Data->Object_Dtype = Parsed_Data->Object_Dtype;
-                    Sub_Data->Keys = Parsed_Data->Keys;
-                    Sub_Data->Value_Length = Parsed_Data->Value_Length;
-                    Sub_Data->Value_s = Parsed_Data->Value_s;
-                }
-                else {
-                    Sub_Data = append_to_JS_object_list(Sub_Data, Parsed_Data, i);
-                    if (Sub_Data == NULL){
-                        free(Parsed_Data);
-                        free(Main_Obj);
-                        printf("Reallocing sub-data failed.\n");
-                        return NULL;
-                    }
-                }
-                
-
-                free(Parsed_Data);
-                i++;
-                Key_is_next = true;
-            }
-        }
-        Main_Obj->Object_Dtype = JSON;
-        Keys_Ptr = Keys_List;
-        Main_Obj->Value_Length = i;
-        Main_Obj->Value_s = Sub_Data;
-        shift_bytes(StringPtr, 2);        
-    }
-    else if (StringPtr[0] == ':'){
-        free(Main_Obj);
-        // printf("colon found\n");
-        shift_bytes(StringPtr, 1);
-        return (struct JS_Object*)((void*)(-1));
-    }
-    else if (StringPtr[0] == ','){
-        free(Main_Obj);
-        // printf("comma found\n");
-        shift_bytes(StringPtr, 1);
-        return (struct JS_Object*)((void*)(-2));
-    }
-    else if (StringPtr[0] == ' ' || StringPtr[0] == '\n' || StringPtr[0] == '\r' || StringPtr[0] == '\t'){
-        free(Main_Obj);
-        // printf("formatter found\n");
-        shift_bytes(StringPtr, 1);
-        return (struct JS_Object*)((void*)(-3)); //-3 for general formatters: char* formatters = " \n\r\t";
+        return return_obj;
     }
     else {
-        // printf("impossible token received.\n");
+        return NULL;
+    }
+}
+
+
+struct JS_Object* Parse_Boolean(char* StringPtr, int* idx){
+    if (strncmp(StringPtr, "true", 4) == 0){
+        struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
+        if (return_obj == NULL) {
+            return NULL;
+        }
+        return_obj->Keys = NULL;
+        return_obj->Value_s = malloc(sizeof(bool*));
+        if (return_obj->Value_s == NULL){
+            free(return_obj);
+            return NULL;
+        }
+        *(bool*)(return_obj->Value_s) = 1;
+        return_obj->Value_Length = 1;
+        return_obj->Object_Dtype = BOOLEAN;
+        *idx = *idx + 4;
+
+        return return_obj;
+    }
+    else if (strncmp(StringPtr, "false", 5) == 0){
+        struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
+        if (return_obj == NULL) {
+            return NULL;
+        }
+        return_obj->Keys = NULL;
+        return_obj->Value_s = malloc(sizeof(bool*));
+        if (return_obj->Value_s == NULL){
+            free(return_obj);
+            return NULL;
+        }
+        *(bool*)(return_obj->Value_s) = 0;
+        return_obj->Value_Length = 1;
+        return_obj->Object_Dtype = BOOLEAN;
+        *idx = *idx + 5;
+
+        return return_obj;
+    }
+    else {
         return NULL;
     }
 
-    Main_Obj->Keys = Keys_Ptr;
-
-    return Main_Obj;
 }
+
+
+struct JS_Object* Parse_Number(char* StringPtr, int* idx){
+    double* num_storage = malloc(sizeof(double));
+    if (num_storage == NULL){
+        return NULL;
+    }
+    struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
+    if (return_obj == NULL){
+        return NULL;
+    }
+
+    int is_num_found = sscanf(StringPtr, "%lf", num_storage);
+    
+    if (!is_num_found){
+        printf("No legit number was found\n");
+        free(num_storage);
+        free(return_obj);
+        return NULL;
+    }
+
+    //num_len is 1 because the first number is guaranteed to be valid (because if it wasn't valid)
+    int num_len = 1;
+    for(;(StringPtr[num_len] >= 48 && StringPtr[num_len] <= 57) || (StringPtr[num_len] == '.');num_len++){
+        //counts the length of the number via the loop
+    }
+    
+    return_obj->Object_Dtype = NUMBER;
+    return_obj->Value_s = (void*) num_storage;
+    return_obj->Keys = NULL;
+    return_obj->Value_Length = 1;
+    *idx = *idx + num_len;
+    return return_obj;
+}
+
+//StringPtr should start at "
+struct JS_Object* Parse_String(char* StringPtr, int* idx){
+    *idx = *idx + 1;
+    StringPtr += 1;
+    struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
+    if (return_obj == NULL) {
+        return NULL;
+    }
+    int str_len = 0;
+    bool escaped = false;
+    while (StringPtr[str_len] != '"' || escaped){ //it should end when the string is closed AND isn't escaped
+        if (StringPtr[str_len] == '\\'){
+            escaped = true;
+        }
+        if (StringPtr[str_len] == '"'){
+            escaped = false;
+        }
+        if (StringPtr[str_len] == '\0'){
+            printf("String abruptly ended.\n");
+            free(return_obj);
+            return NULL;
+        }
+        str_len ++;
+    }
+    return_obj->Value_s = malloc(str_len+1);
+    if (return_obj->Value_s == NULL){
+        free(return_obj);
+        return NULL;
+    }
+
+    strncpy(return_obj->Value_s, StringPtr, str_len);
+    *(char*)(return_obj->Value_s+str_len) = '\0'; //null termination guaranteed
+
+    *idx = *idx + str_len + 1; //to count in the ending char
+
+    return_obj->Object_Dtype = STRING;
+    return_obj->Keys = NULL;
+    return_obj->Value_Length = 1;
+    
+    return return_obj;
+}
+
+//StringPtr should be the start of the string (because of recursion)
+struct JS_Object* Parse_Array(char* StringPtr, int* idx){
+    struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
+    if (return_obj == NULL) {
+        return NULL;
+    }
+    *idx = *idx + 1; //to skip the [ character
+
+    return_obj->Value_Length = 0;
+
+    while (StringPtr[*idx] != ']'){
+        if (StringPtr[*idx] == '\0'){
+            printf("Array abruptly ended.\n");
+            free(return_obj);
+            return NULL;
+        }
+        struct JS_Object* found_element = General_Parser(StringPtr, idx);
+        if (found_element == NULL){
+            if (return_obj->Value_Length == 0){
+                printf("Empty Array found\n");
+                return_obj->Value_s = NULL; //list will be empty
+                break;
+            }
+        }
+        return_obj->Value_Length += 1;
+        //if it's the first found value, allocate memory as well
+        if (return_obj->Value_Length == 1){
+            return_obj->Value_s = malloc(sizeof(struct JS_Object));
+            if (return_obj->Value_s == NULL){
+                free(return_obj);
+                return NULL;
+            }
+            memcpy(return_obj->Value_s, found_element, sizeof(struct JS_Object));
+        }
+        //else, expand the memory block
+        else {
+            return_obj->Value_s = realloc(return_obj->Value_s, return_obj->Value_Length * sizeof(struct JS_Object));
+            if (return_obj->Value_s == NULL){
+                free(return_obj);
+                return NULL;
+            }
+            //if value_length is 2, copy to index 1 (the second element)
+            memcpy(return_obj->Value_s + return_obj->Value_Length-1, found_element, sizeof(struct JS_Object));
+        }
+        //because the Object is copied into the Value_s array, this can be freed
+        free(found_element);
+
+        //TODO: iterate for whitespaces
+        while (StringPtr[*idx] == ' ' || StringPtr[*idx] == '\r' || StringPtr[*idx] == '\n' || StringPtr[*idx] == '\t'){
+            *idx = *idx + 1;
+        }
+        //if next element is not a "," or the end of the array, error out
+
+        if (StringPtr[*idx] == ','){
+            *idx = *idx + 1;
+        }
+        else if (StringPtr[*idx] == ']'){
+            *idx = *idx + 1;
+            printf("End of array found.\n");
+            break;
+        }
+        else {
+            printf("illegal character: %d (ascii)\n", StringPtr[*idx]);
+            free(return_obj->Value_s);
+            free(return_obj);
+            return NULL;
+        }        
+    }
+
+    return_obj->Keys = NULL;
+    return_obj->Object_Dtype = LIST;
+    return return_obj;
+}
+
+//because of recursion, StringPtr is always the start of the string
+struct JS_Object* Parse_Object(char* StringPtr, int* idx){
+    struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
+    return_obj->Keys = NULL;
+    return_obj->Object_Dtype = JSON;
+    return_obj->Value_s = NULL;
+    return_obj->Value_Length = 0;
+    if (return_obj == NULL) {
+        return NULL;
+    }
+    *idx = *idx + 1;
+    while (StringPtr[*idx] != '}'){
+        struct JS_Object* key_str = Parse_String(StringPtr, idx);
+        if (key_str == NULL){
+            printf("no valid string found as key");
+            free(return_obj);
+            return NULL;
+        }
+        return_obj->Value_Length++;
+        //if this is the first key, allocate storage for the Keys
+        if (return_obj->Value_Length == 1){
+            return_obj->Keys = malloc(sizeof(char*));
+            if (return_obj->Keys == NULL){
+                //TODO: create freeing function
+                free(key_str->Value_s);
+                free(key_str);
+                free(return_obj);
+                return NULL;
+            }
+        }
+        //else, just expand the array of char*
+        else {
+            return_obj->Keys = realloc(return_obj->Keys, return_obj->Value_Length * sizeof(char*));
+            if (return_obj->Keys == NULL){
+                //TODO: create freeing function
+                free(key_str->Value_s);
+                free(key_str);
+                free(return_obj);
+                return NULL;
+            }
+        }
+        return_obj->Keys[return_obj->Value_Length-1] = key_str->Value_s;
+        free(key_str);
+
+        
+
+        //skip whitespaces until :
+        while (StringPtr[*idx] == ' ' || StringPtr[*idx] == '\r' || StringPtr[*idx] == '\n' || StringPtr[*idx] == '\t'){
+            *idx = *idx + 1;
+        }
+        if (StringPtr[*idx] == ':'){
+            printf("Object delimiter found\n");
+            *idx = *idx + 1;
+        }
+        else {
+            printf("no valid delimiter (\":\") found.\n");
+            free(return_obj);
+            return NULL;
+        }
+        //get the actual object.
+        struct JS_Object* found_element = General_Parser(StringPtr, idx);
+        if (found_element == NULL){
+            if (return_obj->Value_Length == 0){
+                printf("Empty Array found\n");
+                return_obj->Value_s = NULL; //list will be empty
+                break;
+            }
+        }
+        return_obj->Value_Length += 1;
+        //if it's the first found value, allocate memory
+        if (return_obj->Value_Length == 1){
+            return_obj->Value_s = malloc(sizeof(struct JS_Object));
+            if (return_obj->Value_s == NULL){
+                free(return_obj);
+                return NULL;
+            }
+        }
+        //else, expand the memory block
+        else {
+            return_obj->Value_s = realloc(return_obj->Value_s, return_obj->Value_Length * sizeof(struct JS_Object));
+            if (return_obj->Value_s == NULL){
+                free(return_obj);
+                return NULL;
+            }
+        }
+        memcpy(return_obj->Value_s + return_obj->Value_Length-1, found_element, sizeof(struct JS_Object));
+        //because the Object is copied into the Value_s array, this can be freed
+        free(found_element);
+
+        while (StringPtr[*idx] == ' ' || StringPtr[*idx] == '\r' || StringPtr[*idx] == '\n' || StringPtr[*idx] == '\t'){
+            *idx = *idx + 1;
+        }
+        //if next element is not a "," or the end of the array, error out
+
+        if (StringPtr[*idx] == ','){
+            *idx = *idx + 1;
+            printf("Comma found, jumping to new line.\n");
+        }
+        else if (StringPtr[*idx] == '}'){
+            *idx = *idx + 1;
+            printf("End of object found.\n");
+            break;
+        }
+        else {
+            printf("illegal character: %d (ascii)\n", StringPtr[*idx]);
+            free(return_obj->Value_s);
+            free(return_obj);
+            return NULL;
+        }     
+
+    }
+    return return_obj;
+}
+
+//because of recursion, StringPtr is always the start of the string
+struct JS_Object* General_Parser(char* StringPtr, int* idx){ //prints bullshit as it goes
+    if (StringPtr[*idx] == '\0'){
+        printf("there's nothing to parse.\n");
+        return NULL;
+    }
+    while (StringPtr[*idx] == ' ' || StringPtr[*idx] == '\r' || StringPtr[*idx] == '\n' || StringPtr[*idx] == '\t'){
+        *idx = *idx + 1;
+    }
+    if (StringPtr[*idx] == 'n'){
+        struct JS_Object* return_obj = Parse_Null(StringPtr+(*idx), idx);
+        if (return_obj == NULL){
+            printf("Expected javascript null, found nothing legit\n");
+            return NULL;
+        }
+        return return_obj;
+    }
+    else if (StringPtr[*idx] == 't' || StringPtr[*idx] == 'f'){
+        struct JS_Object* return_obj = Parse_Boolean(StringPtr+(*idx), idx);
+        if (return_obj == NULL){
+            printf("Expected boolean value, found nothing legit\n");
+            return NULL;
+        }
+        return return_obj;
+    }
+    else if (StringPtr[*idx] == '-' || (StringPtr[*idx] >= '0' && StringPtr[*idx] <= '9')) {
+        struct JS_Object* return_obj = Parse_Number(StringPtr+(*idx), idx);
+        if (return_obj == NULL){
+            printf("Expected Number, found nothing legit\n");
+            return NULL;
+        }
+        return return_obj;
+    }
+    else if (StringPtr[*idx] == '[') {
+        struct JS_Object* return_obj = Parse_Array(StringPtr+(*idx), idx);
+        if (return_obj == NULL){
+            printf("Expected Javascript Array, found nothing legit\n");
+            return NULL;
+        }
+        return return_obj;
+    }
+    else if (StringPtr[*idx] == '{'){
+        struct JS_Object* return_obj = Parse_Object(StringPtr+(*idx), idx);
+        if (return_obj == NULL){
+            printf("Expected Javascript Object, found nothing legit\n");
+            return NULL;
+        }
+        return return_obj;
+    }
+    else {
+        printf("Character %d (ascii) is not legit here.\n", StringPtr[*idx]);
+        return NULL;
+    }
+}
+
+
 
 struct JS_Object* start_string_parsing(char* RawStr){
     char* WorkStr = malloc(strlen(RawStr)+1);
@@ -298,7 +401,8 @@ struct JS_Object* start_string_parsing(char* RawStr){
 
     // printf("Raw JSON-string parsed: %s\n", WorkStr);
     // Verbose_String_Parsing(WorkStr);
-    struct JS_Object* Parsed_Json = String_Parsing(WorkStr);
+    int i = 0;
+    struct JS_Object* Parsed_Json = General_Parser(WorkStr, &i);
     
 
     return Parsed_Json;
