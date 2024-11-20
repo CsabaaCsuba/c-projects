@@ -10,6 +10,7 @@
 struct JS_Object* General_Parser(char* StringPtr, int* idx);
 
 struct JS_Object* Parse_Null(char* StringPtr, int* idx){
+    printf("Null found\n");
     if (strncmp(StringPtr, "null", 4) == 0){
         struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
         if (return_obj == NULL) {
@@ -30,6 +31,7 @@ struct JS_Object* Parse_Null(char* StringPtr, int* idx){
 
 
 struct JS_Object* Parse_Boolean(char* StringPtr, int* idx){
+    printf("Boolean found\n");
     if (strncmp(StringPtr, "true", 4) == 0){
         struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
         if (return_obj == NULL) {
@@ -74,6 +76,7 @@ struct JS_Object* Parse_Boolean(char* StringPtr, int* idx){
 
 
 struct JS_Object* Parse_Number(char* StringPtr, int* idx){
+    printf("Number found\n");
     double* num_storage = malloc(sizeof(double));
     if (num_storage == NULL){
         return NULL;
@@ -108,19 +111,28 @@ struct JS_Object* Parse_Number(char* StringPtr, int* idx){
 
 //StringPtr should start at "
 struct JS_Object* Parse_String(char* StringPtr, int* idx){
+    printf("Idx currently: %d\n", *idx);
+    printf("String found\n");
     *idx = *idx + 1;
     StringPtr += 1;
     struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
     if (return_obj == NULL) {
         return NULL;
     }
+    return_obj->Object_Dtype = STRING;
+    return_obj->Keys = NULL;
+    return_obj->Value_Length = 1;
     int str_len = 0;
     bool escaped = false;
     while (StringPtr[str_len] != '"' || escaped){ //it should end when the string is closed AND isn't escaped
+        printf("Current char: %d (ascii)\n", StringPtr[str_len]);
         if (StringPtr[str_len] == '\\'){
             escaped = true;
         }
         if (StringPtr[str_len] == '"'){
+            if (!escaped){
+                break;
+            }
             escaped = false;
         }
         if (StringPtr[str_len] == '\0'){
@@ -141,15 +153,15 @@ struct JS_Object* Parse_String(char* StringPtr, int* idx){
 
     *idx = *idx + str_len + 1; //to count in the ending char
 
-    return_obj->Object_Dtype = STRING;
-    return_obj->Keys = NULL;
-    return_obj->Value_Length = 1;
+    printf("Idx after string parsing: %d\n", *idx);
+    printf("String in the end: %s\n", (char*)return_obj->Value_s);
     
     return return_obj;
 }
 
 //StringPtr should be the start of the string (because of recursion)
 struct JS_Object* Parse_Array(char* StringPtr, int* idx){
+    printf("Array found\n");
     struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
     if (return_obj == NULL) {
         return NULL;
@@ -157,6 +169,8 @@ struct JS_Object* Parse_Array(char* StringPtr, int* idx){
     *idx = *idx + 1; //to skip the [ character
 
     return_obj->Value_Length = 0;
+    return_obj->Object_Dtype = LIST;
+    return_obj->Keys = NULL;
 
     while (StringPtr[*idx] != ']'){
         if (StringPtr[*idx] == '\0'){
@@ -180,7 +194,6 @@ struct JS_Object* Parse_Array(char* StringPtr, int* idx){
                 free(return_obj);
                 return NULL;
             }
-            memcpy(return_obj->Value_s, found_element, sizeof(struct JS_Object));
         }
         //else, expand the memory block
         else {
@@ -190,8 +203,14 @@ struct JS_Object* Parse_Array(char* StringPtr, int* idx){
                 return NULL;
             }
             //if value_length is 2, copy to index 1 (the second element)
-            memcpy(return_obj->Value_s + return_obj->Value_Length-1, found_element, sizeof(struct JS_Object));
+            
         }
+        // printf("Dtype of parsed element: %d\n", found_element->Object_Dtype);
+        memcpy(return_obj->Value_s + return_obj->Value_Length-1, found_element, sizeof(struct JS_Object));
+        int local_idx = return_obj->Value_Length-1;
+        ((struct JS_Object*)return_obj->Value_s + local_idx)->Object_Dtype = found_element->Object_Dtype;
+
+        printf("Dtype of copied element: %d\n", ((struct JS_Object*)return_obj->Value_s + local_idx)->Object_Dtype);
         //because the Object is copied into the Value_s array, this can be freed
         free(found_element);
 
@@ -203,10 +222,11 @@ struct JS_Object* Parse_Array(char* StringPtr, int* idx){
 
         if (StringPtr[*idx] == ','){
             *idx = *idx + 1;
+            printf("Delimiter found in array: , current char: %d (ascii)\n", StringPtr[*idx]);
         }
         else if (StringPtr[*idx] == ']'){
             *idx = *idx + 1;
-            printf("End of array found.\n");
+            printf("End of array found. Array's final length: %d\n", return_obj->Value_Length);
             break;
         }
         else {
@@ -217,13 +237,12 @@ struct JS_Object* Parse_Array(char* StringPtr, int* idx){
         }        
     }
 
-    return_obj->Keys = NULL;
-    return_obj->Object_Dtype = LIST;
     return return_obj;
 }
 
 //because of recursion, StringPtr is always the start of the string
 struct JS_Object* Parse_Object(char* StringPtr, int* idx){
+    printf("Object found\n");
     struct JS_Object* return_obj = malloc(sizeof(struct JS_Object));
     return_obj->Keys = NULL;
     return_obj->Object_Dtype = JSON;
@@ -234,10 +253,16 @@ struct JS_Object* Parse_Object(char* StringPtr, int* idx){
     }
     *idx = *idx + 1;
     while (StringPtr[*idx] != '}'){
-        struct JS_Object* key_str = Parse_String(StringPtr, idx);
+        struct JS_Object* key_str = General_Parser(StringPtr, idx);
         if (key_str == NULL){
             printf("no valid string found as key");
             free(return_obj);
+            return NULL;
+        }
+        if (key_str->Object_Dtype != STRING){
+            free(return_obj);
+            free(key_str);
+            printf("Strint should have dtype string. instead it was %d\n", key_str->Object_Dtype);
             return NULL;
         }
         return_obj->Value_Length++;
@@ -277,7 +302,7 @@ struct JS_Object* Parse_Object(char* StringPtr, int* idx){
             *idx = *idx + 1;
         }
         else {
-            printf("no valid delimiter (\":\") found.\n");
+            printf("no valid delimiter (\":\") found. Instead found %d (ascii)\n", StringPtr[*idx]);
             free(return_obj);
             return NULL;
         }
@@ -345,6 +370,7 @@ struct JS_Object* General_Parser(char* StringPtr, int* idx){ //prints bullshit a
     while (StringPtr[*idx] == ' ' || StringPtr[*idx] == '\r' || StringPtr[*idx] == '\n' || StringPtr[*idx] == '\t'){
         *idx = *idx + 1;
     }
+    printf("Current char when parsing starts: %d (ascii)\n", StringPtr[*idx]);
     if (StringPtr[*idx] == 'n'){
         struct JS_Object* return_obj = Parse_Null(StringPtr+(*idx), idx);
         if (return_obj == NULL){
@@ -369,6 +395,14 @@ struct JS_Object* General_Parser(char* StringPtr, int* idx){ //prints bullshit a
         }
         return return_obj;
     }
+    else if (StringPtr[*idx] == '"') {
+        struct JS_Object* return_obj = Parse_String(StringPtr+(*idx), idx);
+        if (return_obj == NULL){
+            printf("Expected String, found nothing legit\n");
+            return NULL;
+        }
+        return return_obj;
+    }
     else if (StringPtr[*idx] == '[') {
         struct JS_Object* return_obj = Parse_Array(StringPtr+(*idx), idx);
         if (return_obj == NULL){
@@ -386,7 +420,10 @@ struct JS_Object* General_Parser(char* StringPtr, int* idx){ //prints bullshit a
         return return_obj;
     }
     else {
-        printf("Character %d (ascii) is not legit here.\n", StringPtr[*idx]);
+        if (StringPtr[*idx] != 0){
+            StringPtr[*idx+1] = 0;
+        }
+        printf("Character %d (ascii) is not legit here. Current String: %s\n", StringPtr[*idx], StringPtr);
         return NULL;
     }
 }
@@ -418,7 +455,7 @@ char* Convert_Primitive_To_String(struct JS_Object* InputObj){
         printf("null\n");
         return NULL;
     }
-    // printf("Objects' Dtype: %d\n", InputObj->Object_Dtype);
+    printf("Objects' Dtype: %d\n", InputObj->Object_Dtype);
     
     switch (InputObj->Object_Dtype){
         case JS_NULL:
@@ -434,8 +471,8 @@ char* Convert_Primitive_To_String(struct JS_Object* InputObj){
             // printf("parsed number: %s\n", ReturnVal);
             return ReturnVal;
         case BOOLEAN:
-            // printf("Objects' Value: %d\n", *(bool*)InputObj->Value_s);
-            // printf("%d\n", *(bool*)InputObj->Value_s);
+            printf("Objects' Value: %d\n", *(bool*)InputObj->Value_s);
+            printf("%d\n", *(bool*)InputObj->Value_s);
             if (*(bool*)InputObj->Value_s == 0){
                 ReturnVal = malloc(6);
                 strcpy(ReturnVal, "false");
@@ -444,7 +481,7 @@ char* Convert_Primitive_To_String(struct JS_Object* InputObj){
                 ReturnVal = malloc(5);
                 strcpy(ReturnVal, "true");
             }
-            // printf("received boolean: %s\n", ReturnVal);
+            printf("received boolean: %s\n", ReturnVal);
             return ReturnVal;
         case STRING:
             data_len = strlen((char*)InputObj->Value_s) + 3; //+3 for the 2 quotation marks and the null-terminator
@@ -455,7 +492,7 @@ char* Convert_Primitive_To_String(struct JS_Object* InputObj){
             ReturnVal[data_len-1] = '\0';
             return ReturnVal;
         default:
-            printf("non-primitive dtype.\n");
+            printf("non-primitive dtype: %d\n", InputObj->Object_Dtype);
             return NULL;
     };
 
@@ -470,6 +507,7 @@ char* Convert_List_To_String(struct JS_Object* List_Object){
     strcpy(Return_Str, "[");
     // int return_len = 0;
     for (unsigned int i=0; i<List_Object->Value_Length; i++){
+        printf("(index %d) Dtype of current element: %d\n", i, ((struct JS_Object*)List_Object->Value_s+i)->Object_Dtype);
         char* CurrentElementStr = Convert_To_String(((struct JS_Object*)List_Object->Value_s+i));
         if (CurrentElementStr == NULL){
             printf("List's element's conversion failed.\n");
@@ -499,9 +537,9 @@ char* Convert_To_String(struct JS_Object* InputObj){
         Return_Str = malloc(3);
         strcpy(Return_Str, "{");
         for (unsigned int i=0; i<InputObj->Value_Length; i++){
-            // printf("JSON to string conversion started.\n");
-        //TODO: check if the keys & values are valid
-            // printf("key: %s\n", InputObj->Keys[i]);
+            printf("JSON to string conversion started.\n");
+        // TODO: check if the keys & values are valid
+            printf("key: %s\n", InputObj->Keys[i]);
             Return_Str = extend_with_chars(Return_Str, "\""); //starting quotation mark
             Return_Str = extend_with_chars(Return_Str, InputObj->Keys[i]);
             Return_Str = extend_with_chars(Return_Str, "\""); //ending quotation mark
@@ -509,7 +547,7 @@ char* Convert_To_String(struct JS_Object* InputObj){
             
             
             struct JS_Object* Current_Obj = ((struct JS_Object* )InputObj->Value_s)+i;
-            // printf("type of js object: %d\n", Current_Obj->Object_Dtype);
+            printf("type of js object: %d\n", Current_Obj->Object_Dtype);
             char* Obj_Str = Convert_To_String(Current_Obj);
             Return_Str = extend_with_chars(Return_Str, Obj_Str);
             free(Obj_Str);
@@ -522,11 +560,11 @@ char* Convert_To_String(struct JS_Object* InputObj){
         Return_Str = extend_with_chars(Return_Str, "}");
     }
     else if (InputObj->Object_Dtype == LIST){
-        // printf("list to string conversion started.\n");
+        printf("list to string conversion started.\n");
         Return_Str = Convert_List_To_String(InputObj);
     }
     else {
-        // printf("primitive to string conversion started.\n");
+        printf("primitive to string conversion started.\n");
         Return_Str = Convert_Primitive_To_String(InputObj);
     }
     return Return_Str;
