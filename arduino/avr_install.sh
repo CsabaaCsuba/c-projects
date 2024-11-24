@@ -1,0 +1,1 @@
+sudo apt-get install gcc build-essential gcc-avr binutils-avr avr-libc gdb-avr avrdude libusb-dev
