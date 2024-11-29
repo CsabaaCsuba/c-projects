@@ -60,43 +60,55 @@ void setup() {
 }
 
 void writedigit(byte place, byte digit){
-  Serial.print("digit found:");
-  Serial.println(digit);
+  //Serial.print("digit found:");
+  //Serial.println(digit);
   for (int i=0; i<5; i++){
-    if (i+2 == place){
+    /*if (i+2 == place){
       digitalWrite(i+2, HIGH);
     }
     else {
       digitalWrite(i+2, LOW); //turn it off if it's not the digit we want to write to
     }
-  }
+  }*/
   if (digit > 9){
     return;
   }
-  digitalWrite(place, HIGH);
   for (int i=0; i<8; i++){
     //Serial.print("current output written:");
     //Serial.println(i+6);
     //(numbers[digit][i] == 0) ? Serial.println("LOW (0) value is written to output") : Serial.println("HIGH (1) value is written to output");
     digitalWrite(i+6, numbers[digit][i]);
-    delay(1);
+    
+  }
+  digitalWrite(place, HIGH); //turn place on after writing to digits
+  //delay(1);
+  digitalWrite(place, LOW); //turn place off after writing -> we can turn it off and on, because we can't sense the change (as long as the writing is looped)
   }
 }
 
 void test_digits(){
   for (int i=0; i<10; i++){
-    delay(1000);
-    writedigit(digit4, i);
+    //delay(1000);
+    writedigit(2+(i%4), i);
     if (i == 9){
       i = -1; //so it can be 0 again
     }
   }
 }
 
+void write_num(int number){
+  if (number > 9999) {
+    return;
+  }
+  //todo: loop through the digits
+  
+}
+
 void loop() {
-  //writedigit(digit1, 0);
-  //writedigit(digit2, 1);
-  //writedigit(digit3, 2);
-  test_digits();
+  writedigit(digit1, 0);
+  writedigit(digit2, 1);
+  writedigit(digit3, 2);
+  writedigit(digit4, 3);
+  //test_digits();
   
 }
