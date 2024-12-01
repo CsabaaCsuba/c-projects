@@ -13,7 +13,7 @@ PORT = /dev/ttyUSB0
 PROGRAMMER = arduino
 
 # File Configurations
-TARGET = led
+TARGET ?= main
 SOURCE = $(TARGET).c
 HEX = $(TARGET).hex
 ELF = $(TARGET).elf
