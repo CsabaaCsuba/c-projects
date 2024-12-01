@@ -13,7 +13,7 @@ int main(void) {
 
         PORTB = PORTB & ~(1 << PORTB5);
         // Wait for 1 second (1000 milliseconds)
-        _delay_ms(500);
+        _delay_ms(2000);
     }
 
     return 0;
