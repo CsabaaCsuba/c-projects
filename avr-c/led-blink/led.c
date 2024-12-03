@@ -9,11 +9,11 @@ int main(void) {
         // Toggle the LED state
         PORTB = PORTB | (1 << PORTB5);
 
-        _delay_ms(2000);
+        _delay_ms(500);
 
         PORTB = PORTB & ~(1 << PORTB5);
         // Wait for 1 second (1000 milliseconds)
-        _delay_ms(2000);
+        _delay_ms(500);
     }
 
     return 0;

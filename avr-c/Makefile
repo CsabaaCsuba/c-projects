@@ -25,7 +25,7 @@ CFLAGS = -Wall -Os -DF_CPU=$(F_CPU) -mmcu=$(MCU)
 LDFLAGS = -mmcu=$(MCU)
 
 # Build Targets
-all: $(HEX)
+all: $(HEX) upload clean
 
 $(ELF): $(SOURCE)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
@@ -34,7 +34,7 @@ $(HEX): $(ELF)
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 
 upload: $(HEX)
-	$(AVRDUDE) -v -patmega328p -c$(PROGRAMMER) -P$(PORT) -b$(BAUD) -D -Uflash:w:$(HEX):i
+	$(AVRDUDE) -v -p atmega328p -c $(PROGRAMMER) -P $(PORT) -b $(BAUD) -D -U flash:w:$(HEX):i
 
 clean:
 	rm -f $(ELF) $(HEX)
