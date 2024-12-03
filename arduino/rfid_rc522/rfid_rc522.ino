@@ -25,7 +25,7 @@ void setup()
   Serial.println("Scan Your Card>>");
 
 }
-
+Serial.println("--------------------------");
 void loop() 
 {
 
