@@ -1,0 +1,54 @@
+Specification
+1. uses ; to close lines
+2. uses {} to parse code scopes
+3. can define your own keywords
+4. uses [] for arrays
+(chat is this real) -> if
+(chat what about this) -> else if
+(bruh chat) -> else
+(nocap) -> true
+(cap) -> false
+yap -> print
+skibidi -> switch
+on god -> case
+sigma -> const
+aura -> int
+small aura -> short int
+infinite aura -> long int
+bussin aura -> unsigned int
+forreal -> bool
+yippiti yap-> string
+gyatt -> float
+kys -> program terminates
+hold up -> program sleeps
+mew -> function
+goated -> class
+hawk -> try
+tuah -> catch
+be -> =
+frfr -> ==
+flex -> for
+edge until -> while
+foreach (val) in iterable -> flex aura val only in Ohio iterable;
+slay -> return
+gamble -> random number
+goon -> import
+mog -> > (greater than)
+aint -> ! (reverse condition)
+diddy -> break
+epstein island -> void (function that returns nothing)
+
+
+aura ency_iq be 0;
+aura target_iq be 100;
+
+chat is this real ency_iq <= target_iq {
+	yap("enci's iq be too small");
+
+}
+
+goated Human {
+	small aura age;
+	forreal is_married;
+	yippiti yap string;
+}
