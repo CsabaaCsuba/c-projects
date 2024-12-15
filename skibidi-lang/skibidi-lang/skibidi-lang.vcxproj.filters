@@ -18,5 +18,8 @@
     <ClCompile Include="skibidi-lang.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AST.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

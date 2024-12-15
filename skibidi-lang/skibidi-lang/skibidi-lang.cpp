@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstring>
 #include <stdint.h>
+#include "AST.cpp"
 
 /*
 Specification
@@ -75,8 +76,8 @@ typedef enum {
 	reverse_condition, //!
 	
 
-	scope_opener, // {
-	scope_closer,
+	open_curly,  //{
+	close_curly,
 	open_parenthesis,
 	closing_parenthesis,
 	open_squarebracket,
