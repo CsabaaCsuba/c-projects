@@ -5,4 +5,7 @@
 *.elf
 .vscode/*
 .vs/*
+*/.vs/*
 Debug/*
+*.vcxproj
+*.filters
