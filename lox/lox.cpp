@@ -10,6 +10,8 @@
     #define errno_t uint64_t
 #endif
 
+#include "Scanner.hpp"
+
 errno_t fopen_s(FILE **f, const char *name, const char *mode) {
     errno_t ret = 0;
     assert(f);
@@ -85,6 +87,13 @@ public:
     static void run(char* source) {
         printf("source: %s", source);
         // Add scanning and tokenizing logic here
+        Scanner scanner(source);
+        MyVec<Token> tokens = scanner.scanTokens();
+
+        for (size_t i=0; i<tokens.size; i++){
+            printf("Token [%u]: %s\n", i, tokens.data[i].toString());
+        }
+
     }
 
     static void error(int line, char* message) {
@@ -100,8 +109,6 @@ public:
 // Define the static variable
 bool Lox::hadError = false;
 
-// #include "TokenType.hpp"
-#include "Scanner.hpp"
 
 int main(int argc, char** argv) {
     Lox::Initialize(); // Initialize static data

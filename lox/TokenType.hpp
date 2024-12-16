@@ -95,13 +95,13 @@ public:
 		char* return_str = NULL;
 		switch (this->literal_type){
 			case String:
-				sprintf(buff, "Type: %d | Lexeme: %4000s | Literal: '%4000s'", this->type, this->lexeme, (char*)literal_ptr);
+				sprintf(buff, "Type: %d | Lexeme: %s | Literal: '%s'", this->type, this->lexeme, (char*)literal_ptr);
 				break;
 			case Number:
-				sprintf(buff, "Type: %d | Lexeme: %4000s | Literal: '%lf'", this->type, this->lexeme, *(double*)literal_ptr);
+				sprintf(buff, "Type: %d | Lexeme: %s | Literal: '%lf'", this->type, this->lexeme, *(double*)literal_ptr);
 				break;
 			case None:
-				sprintf(buff, "Type: %d | Lexeme: %4000s | Literal: None", this->type, this->lexeme);
+				sprintf(buff, "Type: %d | Lexeme: %s | Literal: None", this->type, this->lexeme);
 				break;
 		}
 		size_t bufflen = strlen(buff)+1;

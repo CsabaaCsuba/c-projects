@@ -10,9 +10,10 @@
 
 template <typename T>
 class MyVec {
-private:
-    T* data;
+//private:
+    
 public:
+    T* data;
     size_t cap;
     size_t size;
     
@@ -58,7 +59,7 @@ private:
     }
     
     char advance(){
-        this->current++;
+        current++;
         return source[current-1];
     }
 
@@ -73,19 +74,23 @@ private:
         else {
             literalType = None;
         }
-        size_t substring_size = this->current - this->start + 1;
+
+        size_t substring_size = this->current - this->start;
         char* substring = (char*)malloc(substring_size);
         assert(substring);
-        memcpy(substring, this->source+start, this->current);
+        memcpy(substring, this->source+start, substring_size);
         substring[substring_size] = '\0';
 
         switch (literalType){
             case None:
                 this->tokens.add(Token(type, substring, line));
+                break;
             case Number:
                 this->tokens.add(Token(type, substring, *(double*)literalPtr, line));
+                break;
             case String:
                 this->tokens.add(Token(type, substring, (char*)literalPtr, line));
+                break;
         }
     }
 
@@ -94,7 +99,9 @@ private:
     }
 
     void scanToken(){
+        
         char c = advance();
+        printf("current char: %c\n", c);
         switch (c){
             case '(': addToken(LEFT_PAREN); break;
             case ')': addToken(RIGHT_PAREN); break;
@@ -141,7 +148,8 @@ private:
                 break;
 
             case 'o':
-                if (peek() == 'r') {
+                if (peek() == 'r' && !isAlphaNumeric(peekNext())) {
+                    advance(); // Consume 'r'
                     addToken(OR);
                 }
                 break;
@@ -153,7 +161,8 @@ private:
                     identifier();
                 }
                 else {
-                    Lox::error(line, (char*)"Unexpected character");
+                    // Lox::error(line, (char*)"Unexpected character");
+                    printf("Unexpected character: %c (ascii)\n", c);
                 }
                 
                 break;
@@ -179,7 +188,8 @@ private:
         }
 
         if (isAtEnd()){
-            Lox::error(line, (char*)"Unterminated string.");
+            // Lox::error(line, (char*)"Unterminated string.");
+            printf("unterminated string");
             return;
         }
 
@@ -189,8 +199,8 @@ private:
         size_t substring_size = this->current - this->start - 1;
         char* substring = (char*)malloc(substring_size);
         assert(substring);
-        memcpy(substring, this->source+start+1, this->current-1);
-        substring[substring_size] = '\0';
+        memcpy(substring, this->source+start+1, substring_size);
+        substring[substring_size-1] = '\0';
 
         addToken(STRING, (void*)substring);
     }
@@ -199,7 +209,7 @@ private:
         return c >= '0' && c <= '9';
     } 
     void number(){
-        while(!isDigit(peek())) advance();
+        while(isDigit(peek())) advance();
 
         if (peek() == '.' && isDigit(peekNext())){
             advance();
@@ -207,9 +217,12 @@ private:
         }
 
         size_t substring_size = this->current - this->start;
-        char substring[100] = {0};
-        memcpy(substring, this->source+start, this->current);
+        char* substring = (char*)malloc(substring_size + 1);
+        assert(substring);
+        memcpy(substring, this->source + this->start, substring_size);
         substring[substring_size] = '\0';
+
+        printf("number's substring: %s\n", substring);
 
         double* parsed_num = (double*)malloc(sizeof(double));
         assert(parsed_num);
@@ -238,8 +251,11 @@ private:
     }
 public:
     Scanner(char* source){
-        this->source = source;
-        this->source_len = strlen(source);
+        // this->source = source;
+        this->source_len = strlen(source)+1;
+        this->source = (char*)malloc(this->source_len);
+        assert(this->source);
+        memcpy(this->source, source, this->source_len);
 
     }
     MyVec<Token> scanTokens(){
@@ -248,6 +264,7 @@ public:
             scanToken();
         }
         this->tokens.add(Token(END_OF_FILE, (char*)"", this->line));
+        printf("scan ended.\n");
         return this->tokens;
     }
 
