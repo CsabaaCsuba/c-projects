@@ -54,8 +54,11 @@ char* token_as_str(Token current_token){
     len = strlen(temp)+1;
     return_ptr = malloc(len);
     strncpy(return_ptr, temp, len-1);
+    return_ptr[len-1] = '\0';
     return return_ptr;
 }
+
+
 
 //priority: () -> / * -> + -
 void find_first_op(Token* token_arr, uint8_t tokens_len){

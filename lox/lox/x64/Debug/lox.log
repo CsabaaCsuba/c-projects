@@ -1,0 +1,15 @@
+﻿  lox.cpp
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(21,2): error C2143: syntax error: missing '}' before '('
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(21,2): error C2059: syntax error: '-'
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(22,1): error C2143: syntax error: missing ';' before '}'
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(22,1): error C2059: syntax error: '}'
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(67,2): error C2535: 'Token::Token(TokenType,char *,double,int)': member function already defined or declared
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(42,3): error C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(56,3): error C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(71,3): error C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  TokenType.hpp
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(67,2): error C2535: 'Token::Token(TokenType,char *,double,int)': member function already defined or declared
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(42,3): error C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(56,3): error C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\csabi\Desktop\c\c-projects\lox\lox\TokenType.hpp(71,3): error C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  Generating Code...
