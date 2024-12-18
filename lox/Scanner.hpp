@@ -8,6 +8,22 @@
 //     static void error(int line, char* message);
 // };
 
+void assert_ptr(void* ptr){
+    if (ptr == (void*)0){
+        printf("assertion for pointer failed.\n");
+    }
+}
+
+char* create_substring(char* main_ptr, size_t start_idx, size_t end_idx){
+    size_t substring_size = end_idx - start_idx;
+    char* substring = (char*)malloc(substring_size);
+    assert_ptr(substring);
+    memcpy(substring, main_ptr+start_idx, substring_size);
+
+    substring[substring_size-1] = '\0';
+    return substring;
+}
+
 template <typename T>
 class MyVec {
 //private:
@@ -21,14 +37,14 @@ public:
         this->cap = cap;
         this->size = 0;
         this->data = (T*)malloc(sizeof(T)*cap);
-        assert(this->data);
+        assert_ptr(this->data);
     }
 
     void add(T element){
         if (this->size >= this->cap){
             this->cap++;
             this->data = (T*)realloc((this->data), sizeof(T)*cap);
-            assert(this->data);
+            assert_ptr(this->data);
             this->size++;
             memcpy(this->data+cap-1, &element, sizeof(T));
         }
@@ -65,30 +81,35 @@ private:
 
     void addToken(TokenType type, void* literalPtr){
         Literal literalType;
+        char* substring = NULL;
         if (type == STRING){
             literalType = String;
+            substring = create_substring(this->source, this->start+1, this->current);
         }
         else if (type == NUMBER){
             literalType = Number;
+            substring = create_substring(this->source, this->start, this->current);
         }
         else {
             literalType = None;
+            substring = create_substring(this->source, this->start, this->current+1);
         }
 
-        size_t substring_size = this->current - this->start;
-        char* substring = (char*)malloc(substring_size);
-        assert(substring);
-        memcpy(substring, this->source+start, substring_size);
-        substring[substring_size] = '\0';
 
         switch (literalType){
             case None:
                 this->tokens.add(Token(type, substring, line));
                 break;
             case Number:
+                if (literalPtr == NULL){
+                    printf("the literal's pointer was null. (Parsed a Number)\n");
+                }
                 this->tokens.add(Token(type, substring, *(double*)literalPtr, line));
                 break;
             case String:
+                if (literalPtr == NULL){
+                    printf("the literal's pointer was null. (Parsed a String)\n");
+                }
                 this->tokens.add(Token(type, substring, (char*)literalPtr, line));
                 break;
         }
@@ -189,18 +210,17 @@ private:
 
         if (isAtEnd()){
             // Lox::error(line, (char*)"Unterminated string.");
-            printf("unterminated string");
+            printf("unterminated string\n");
             return;
         }
 
         advance(); //so it jumps over the closing
 
          //the two " characters don't count, but one has to be there, for the guaranteed string terminator
-        size_t substring_size = this->current - this->start - 1;
-        char* substring = (char*)malloc(substring_size);
-        assert(substring);
-        memcpy(substring, this->source+start+1, substring_size);
-        substring[substring_size-1] = '\0';
+
+        char* substring = create_substring(this->source, this->start+1, this->current);
+
+        printf("found string: %s\n", substring);
 
         addToken(STRING, (void*)substring);
     }
@@ -216,16 +236,12 @@ private:
             while (isDigit(peek())) advance();
         }
 
-        size_t substring_size = this->current - this->start;
-        char* substring = (char*)malloc(substring_size + 1);
-        assert(substring);
-        memcpy(substring, this->source + this->start, substring_size);
-        substring[substring_size] = '\0';
+        char* substring = create_substring(this->source, this->start, this->current);
 
         printf("number's substring: %s\n", substring);
 
         double* parsed_num = (double*)malloc(sizeof(double));
-        assert(parsed_num);
+        assert_ptr(parsed_num);
         *parsed_num = atof(substring);
 
         addToken(NUMBER, parsed_num);
@@ -254,7 +270,7 @@ public:
         // this->source = source;
         this->source_len = strlen(source)+1;
         this->source = (char*)malloc(this->source_len);
-        assert(this->source);
+        assert_ptr(this->source);
         memcpy(this->source, source, this->source_len);
 
     }
