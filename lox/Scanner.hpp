@@ -2,64 +2,19 @@
     #include "TokenType.hpp"
 #endif
 
+#ifndef MyVec
+    #include "MyVec.hpp"
+#endif
+
 // class Lox{
 // public:
 //     static bool hadError;
 //     static void error(int line, char* message);
 // };
 
-void assert_ptr(void* ptr){
-    if (ptr == (void*)0){
-        printf("assertion for pointer failed.\n");
-    }
-}
-
-char* create_substring(char* main_ptr, size_t start_idx, size_t end_idx){
-    size_t substring_size = end_idx - start_idx;
-    char* substring = (char*)malloc(substring_size);
-    assert_ptr(substring);
-    memcpy(substring, main_ptr+start_idx, substring_size);
-
-    substring[substring_size-1] = '\0';
-    return substring;
-}
-
-template <typename T>
-class MyVec {
-//private:
-    
-public:
-    T* data;
-    size_t cap;
-    size_t size;
-    
-    MyVec(size_t cap){
-        this->cap = cap;
-        this->size = 0;
-        this->data = (T*)malloc(sizeof(T)*cap);
-        assert_ptr(this->data);
-    }
-
-    void add(T element){
-        if (this->size >= this->cap){
-            this->cap++;
-            this->data = (T*)realloc((this->data), sizeof(T)*cap);
-            assert_ptr(this->data);
-            this->size++;
-            memcpy(this->data+cap-1, &element, sizeof(T));
-        }
-        else {
-            memcpy(this->data+size, &element, sizeof(T));
-            this->size++;
-        }
-    }
-
-    ~MyVec(){ //destructor (called automatically)
-        free(this->data);
-    }
 
 
-};
+
 
 class Scanner {
 private:
@@ -236,7 +191,7 @@ private:
             while (isDigit(peek())) advance();
         }
 
-        char* substring = create_substring(this->source, this->start, this->current);
+        char* substring = create_substring(this->source, this->start, this->current+1);
 
         printf("number's substring: %s\n", substring);
 
@@ -253,9 +208,65 @@ private:
     }
 
     void identifier(){
+
+        TokenType type = IDENTIFIER;
         while (isAlphaNumeric(peek())) advance();
 
-        addToken(IDENTIFIER);
+        char* substring = create_substring(this->source, this->start, this->current+1);
+
+        if (strcmp(substring, "and") == 0){
+            type = AND;
+        }
+        else if (strcmp(substring, "class") == 0){
+            type = CLASS;
+        }
+        else if (strcmp(substring, "else") == 0){
+            type = ELSE;
+        }
+        else if (strcmp(substring, "false") == 0){
+            type = FALSE;
+        }
+        else if (strcmp(substring, "for") == 0){
+            type = FOR;
+        }
+        else if (strcmp(substring, "fun") == 0){
+            type = FUN;
+        }
+        else if (strcmp(substring, "if") == 0){
+            type = IF;
+        }
+        else if (strcmp(substring, "nil") == 0){
+            type = NIL;
+        }
+        else if (strcmp(substring, "or") == 0){
+            type = OR;
+        }
+        else if (strcmp(substring, "print") == 0){
+            type = PRINT;
+        }
+        else if (strcmp(substring, "return") == 0){
+            type = RETURN;
+        }
+        else if (strcmp(substring, "super") == 0){
+            type = SUPER;
+        }
+        else if (strcmp(substring, "this") == 0){
+            type = THIS;
+        }
+        else if (strcmp(substring, "true") == 0){
+            type = TRUE;
+        }
+        else if (strcmp(substring, "var") == 0){
+            type = VAR;
+        }
+        else if (strcmp(substring, "while") == 0){
+            type = WHILE;
+        }
+
+
+        free(substring);
+
+        addToken(type);
     }
 
     bool isAlpha(char c) {
