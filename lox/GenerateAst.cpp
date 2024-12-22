@@ -22,10 +22,32 @@ public:
             perror("Error creating file\n");
         }
 
-        fprintf(file, "class %s {\n};", base_name);
+        fprintf(file, "#include \"utils.hpp\"\nclass %s {\n", base_name);
 
+        for (char* type : types){
+            char* colon_pos = strchr(type, ':');
+            defineTypeLowLevel(file, base_name, type, colon_pos);
+
+
+        }
+
+        fprintf(file, "};");
         fclose(file);
     }
+
+private:
+    static void defineTypeLowLevel(FILE* fileptr, char* base_name, char* str_start, char* colon_pos){
+        *colon_pos = '\0'; //by replacing the colon with a null character, the fprintf function can be tricked
+        //str_start is only "read" until the end of the classname
+        fprintf(fileptr, "class %s : %s {\n", str_start, base_name);
+        
+        //constructor
+        fprintf(fileptr, "\t%s(%s){", str_start, colon_pos+1);
+        
+
+    }
+
+
 
 };
 

@@ -3,8 +3,9 @@
 #endif
 
 #ifndef MyVec
-    #include "MyVec.hpp"
+    #include "utils.hpp"
 #endif
+
 
 // class Lox{
 // public:
@@ -43,7 +44,8 @@ private:
         }
         else if (type == NUMBER){
             literalType = Number;
-            substring = create_substring(this->source, this->start, this->current);
+            substring = create_substring(this->source, this->start, this->current+1);
+            printf("created substring: %s\n", substring);
         }
         else {
             literalType = None;
@@ -138,7 +140,7 @@ private:
                 }
                 else {
                     // Lox::error(line, (char*)"Unexpected character");
-                    printf("Unexpected character: %c (ascii)\n", c);
+                    printf("Unexpected character: %u (ascii)\n", c);
                 }
                 
                 break;
@@ -198,6 +200,10 @@ private:
         double* parsed_num = (double*)malloc(sizeof(double));
         assert_ptr(parsed_num);
         *parsed_num = atof(substring);
+
+        printf("Parsed num: %lf\n", *parsed_num);
+
+        free(substring);
 
         addToken(NUMBER, parsed_num);
     }

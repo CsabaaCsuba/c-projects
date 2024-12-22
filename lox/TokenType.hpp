@@ -35,13 +35,15 @@ public:
 	void* literal_ptr;
 	int line;
 
-	Token(TokenType type, char* lexeme, double number, int line) {
+	//to handle numbers
+	Token(TokenType type, char* input_lexeme, double number, int line) {
 		this->type = type;
-		uint64_t lexeme_length = strlen(lexeme)+1;
+		printf("input lexeme: %s\n", input_lexeme);
+		uint64_t lexeme_length = strlen(input_lexeme)+1;
 		this->lexeme = (char*)malloc(lexeme_length);
 		if (this->lexeme != nullptr) {
-			memcpy(this->lexeme, lexeme, lexeme_length);
-			this->lexeme[lexeme_length - 1] = '\0';
+			memcpy(this->lexeme, input_lexeme, lexeme_length);
+			this->lexeme[lexeme_length] = '\0';
 		}
 
 
