@@ -35,7 +35,7 @@ int main(){
     //todo: write the parser for this
     char* hardcoded_operation = "x = 3 + 6 / 2";
 
-
+    char asdf = 0;
 
     return 0;
 }
