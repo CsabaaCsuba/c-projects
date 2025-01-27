@@ -15,12 +15,12 @@
 // Vertices coordinates
 GLfloat vertices[] =
 {
-	-0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f, // Lower left corner
-	0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f, // Lower right corner
-	0.0f, 0.5f * float(sqrt(3)) * 2 / 3, 0.0f, // Upper corner
-	-0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f, // Inner left
-	0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f, // Inner right
-	0.0f, -0.5f * float(sqrt(3)) / 3, 0.0f // Inner down
+	-0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f, 	0.0, 0.8, 0.3, 	0.02,// Lower left corner
+	0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f, 	0.0, 0.8, 0.3, 	0.02,// Lower right corner
+	0.0f, 0.5f * float(sqrt(3)) * 2 / 3, 0.0f, 	0.0, 1.0, 0.6, 	0.32,// Upper corner
+	-0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f, 0.0, 0.9, 0.45, 0.17,// Inner left
+	0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f, 	0.0, 0.9, 0.45, 0.17,// Inner right
+	0.0f, -0.5f * float(sqrt(3)) / 3, 0.0f, 	0.0, 0.8, 0.3, 	0.02,// Inner down
 };
 
 // Indices for vertices order
@@ -67,7 +67,7 @@ int main()
 
 
 	// Generates Shader object using shaders defualt.vert and default.frag
-	Shader shaderProgram("default.vert", "default.frag");
+	Shader shaderProgram("shaders/default.vert", "shaders/default.frag");
 
 
 
@@ -81,7 +81,8 @@ int main()
 	EBO EBO1(indices, sizeof(indices));
 
 	// Links VBO to VAO
-	VAO1.LinkVBO(VBO1, 0);
+	VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
+	VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 	// Unbind all to prevent accidentally modifying them
 	VAO1.Unbind();
 	VBO1.Unbind();
