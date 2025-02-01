@@ -32,9 +32,64 @@ typedef enum {
 const int window_height = 600;
 const int window_width = 800;
 const int tile_size = 60;
+const int offset_x = window_width / 2 - tile_size*8 / 2;
+const int offset_y = window_height / 2 - tile_size*8 / 2;
 
-uint8_t GetSelectedPieceIdx(Piece* PieceArr, uint8_t MaxIters){
-    
+//if user clicked, return the index of the chess piece he/she clicked on. Else, return an out-of-bounds value
+uint8_t GetSelectedPieceIdxOnClick(Piece* PieceArr, uint8_t MaxIters){
+    uint32_t mouse_x;
+    uint32_t mouse_y;
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+        Vector2 mouse_pos = GetMousePosition();
+        mouse_x = (uint32_t)mouse_pos.x;
+        mouse_y = (uint32_t)mouse_pos.y;
+        // printf("mouse x: %d, mouse y: %d\n", mouse_x, mouse_y);
+        for (int i=0; i<MaxIters; i++){
+            Piece p = PieceArr[i];
+            if (offset_x+p.board_pos_x*tile_size < mouse_x
+                && offset_x+p.board_pos_x*tile_size+tile_size > mouse_x
+                && offset_y+p.board_pos_y*tile_size < mouse_y
+                && offset_y+p.board_pos_y*tile_size+tile_size > mouse_y){
+                
+                return i;
+            }
+        }
+    }
+    return UINT8_MAX;
+}
+
+void DrawPossibleMoves(Piece* PieceArr, uint8_t Idx, bool IsUpper){
+    int r = tile_size/2;
+    Piece current_piece = PieceArr[Idx];
+    switch (current_piece.type){
+        case PAWN:
+            if (IsUpper){
+
+            }
+            else {
+
+            }
+            break;
+        case ROOK:
+            
+            break;
+        case KNIGHT:
+            break;
+        case BISHOP:
+            break;
+        case QUEEN:
+            break;
+        case KING:
+            break;
+        
+        
+    }
+    for (int i=0; i<8; i++){
+        for (int j=0; j<8; j++){
+            
+        }
+    }
+    // DrawCircle();
 }
 
 int main(){
@@ -88,12 +143,17 @@ int main(){
     uint8_t player1_alive_count = 16;
     uint8_t player2_alive_count = 16;
 
-    GameState game_state = PLAYER1_SELECTING;
+    GameState game_state = PLAYER1_TURN;
     Color current_color;
-    const int offset_x = window_width / 2 - tile_size*8 / 2;
-    const int offset_y = window_height / 2 - tile_size*8 / 2;
+    
+    uint8_t selected_piece_idx;
 
-    char state_message[256] = {0};
+    char state_message[256] = "player1's turn";
+
+    //exact calculated values will be stored here
+    int possible_step_positions[21] = {0};  //queen can go through 7 tiles in one direction, so 21
+    //something is needed to keep track of the current number of tiles that can be traveled
+    int step_positions_len = {0};           
     
     while (!WindowShouldClose()){
         BeginDrawing();
@@ -176,12 +236,56 @@ int main(){
 
         switch (game_state){
             case PLAYER1_TURN:
+                selected_piece_idx = GetSelectedPieceIdxOnClick(player1_alive_pieces, player1_alive_count);
+                if (selected_piece_idx < player1_alive_count){
+                    game_state = PLAYER1_SELECTING;
+                    strcpy(state_message, "Player1 is selecting...");
+                }
                 break;
             case PLAYER2_TURN:
+                selected_piece_idx = GetSelectedPieceIdxOnClick(player1_alive_pieces, player1_alive_count);
+                if (selected_piece_idx < player1_alive_count){
+                    game_state = PLAYER2_SELECTING;
+                    strcpy(state_message, "Player2 is selecting...");
+                }
                 break;
             case PLAYER1_SELECTING:
+                // DrawPossibleMoves(player1_alive_pieces, selected_piece_idx, true);
+                Piece current_piece = player1_alive_pieces[selected_piece_idx];
+                
+                switch (current_piece.type){
+                    case PAWN:
+                        int circle_radius = tile_size / 2;
+                        if (current_piece.board_pos_y == 1){
+                            DrawCircle(offset_x+current_piece.board_pos_x*tile_size+circle_radius, offset_y+2*tile_size+circle_radius, (float)circle_radius, RED);
+                            DrawCircle(offset_x+current_piece.board_pos_x*tile_size+circle_radius, offset_y+3*tile_size+circle_radius, (float)circle_radius, RED);
+                        }
+                        else {
+                            DrawCircle(offset_x+current_piece.board_pos_x*tile_size+circle_radius, offset_y+current_piece.board_pos_y+1*tile_size+circle_radius, (float)circle_radius, RED);
+                        }
+                        break;
+                    case ROOK:
+                        break;
+                    case KNIGHT:
+                        break;
+                    case BISHOP:
+                        break;
+                    case QUEEN:
+                        break;
+                    case KING:
+                        break;
+                    default:
+                        printf("omagaaaad");
+                        break;
+
+
+                }
+
                 break;
             case PLAYER2_SELECTING:
+                // DrawPossibleMoves(player2_alive_pieces, selected_piece_idx, false);
+
+
                 break;
             case PLAYER1_WON:
                 break;
@@ -190,6 +294,7 @@ int main(){
             
         }
 
+        DrawText(state_message, 300, 20, 20, BLACK);
         
         DrawFPS(0, 0);
         EndDrawing();
