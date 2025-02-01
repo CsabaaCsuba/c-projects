@@ -21,9 +21,9 @@ typedef struct {
 
 typedef enum {
     PLAYER1_TURN,
-    PLAYER1_SELECTING,
+    // PLAYER1_SELECTING,
     PLAYER2_TURN,
-    PLAYER2_SELECTING,
+    // PLAYER2_SELECTING,
 
     PLAYER1_WON,
     PLAYER2_WON,
@@ -58,19 +58,35 @@ uint8_t GetSelectedPieceIdxOnClick(Piece* PieceArr, uint8_t MaxIters){
     return UINT8_MAX;
 }
 
-void DrawPossibleMoves(Piece* PieceArr, uint8_t Idx, bool IsUpper){
+void DeterminePossibleMoves(Piece* PieceArr, Piece* EnemyArr, int PieceArrLen, int EnemyArrLen, int SelectedIdx, Vector2* PossiblePositions, int* PositionsLenPtr, bool IsUpper){
     int r = tile_size/2;
-    Piece current_piece = PieceArr[Idx];
+    Piece current_piece = PieceArr[SelectedIdx];
     switch (current_piece.type){
         case PAWN:
-            if (IsUpper){
+            int m = 1; //multiplier
+            if (!IsUpper){
+                m = -1;
+            }
+            if (current_piece.board_pos_y == 1 || (current_piece.board_pos_y == 6 && !IsUpper)){
+                PossiblePositions[0].x = (float)offset_x+current_piece.board_pos_x*tile_size;
+                PossiblePositions[0].y = (float)offset_y+(current_piece.board_pos_y+m)*tile_size;
+                PossiblePositions[1].x = (float)offset_x+current_piece.board_pos_x*tile_size;
+                PossiblePositions[1].y = (float)offset_y+(current_piece.board_pos_y+m*2)*tile_size;
 
+                *PositionsLenPtr = 2;
+                printf("positions: (%f, %f) | (%f, %f)\n", PossiblePositions[0].x, PossiblePositions[0].y, PossiblePositions[1].x, PossiblePositions[1].y);
             }
             else {
+                PossiblePositions[0].x = (float)offset_x+current_piece.board_pos_x*tile_size;
+                PossiblePositions[0].y = (float)offset_y+m*(current_piece.board_pos_y+m)*tile_size; //current_piece.board_pos_y is not tested yet
 
+                //todo: write a checker for the case of "hitting" an opponent character down
+                *PositionsLenPtr = 1;
             }
+        
             break;
         case ROOK:
+            
             
             break;
         case KNIGHT:
@@ -81,15 +97,11 @@ void DrawPossibleMoves(Piece* PieceArr, uint8_t Idx, bool IsUpper){
             break;
         case KING:
             break;
-        
+        default:
+            printf("Unexpected type for current piece: %d", current_piece.type);
+            break;
         
     }
-    for (int i=0; i<8; i++){
-        for (int j=0; j<8; j++){
-            
-        }
-    }
-    // DrawCircle();
 }
 
 int main(){
@@ -151,9 +163,13 @@ int main(){
     char state_message[256] = "player1's turn";
 
     //exact calculated values will be stored here
-    int possible_step_positions[21] = {0};  //queen can go through 7 tiles in one direction, so 21
+    Vector2 possible_step_positions[21] = {0};  //queen can go through 7 tiles in one direction, so 21
     //something is needed to keep track of the current number of tiles that can be traveled
-    int step_positions_len = {0};           
+    int step_positions_len = {0};
+
+    Color marking_color = {240, 0, 0, 120};
+
+    Vector2 tile_size_vec = {(float)tile_size, (float)tile_size};
     
     while (!WindowShouldClose()){
         BeginDrawing();
@@ -238,53 +254,41 @@ int main(){
             case PLAYER1_TURN:
                 selected_piece_idx = GetSelectedPieceIdxOnClick(player1_alive_pieces, player1_alive_count);
                 if (selected_piece_idx < player1_alive_count){
-                    game_state = PLAYER1_SELECTING;
-                    strcpy(state_message, "Player1 is selecting...");
+                    DeterminePossibleMoves(
+                        player1_alive_pieces, player2_alive_pieces, 
+                        player1_alive_count, player2_alive_count, 
+                        selected_piece_idx, 
+                        possible_step_positions, &step_positions_len, 
+                        true
+                    );
                 }
+                
+
+                for (int i=0; i<step_positions_len; i++){
+                    DrawRectangleV(possible_step_positions[i], tile_size_vec, marking_color);
+                }
+
+
+                for (int i=0; i<step_positions_len; i++){
+
+                }
+
                 break;
             case PLAYER2_TURN:
-                selected_piece_idx = GetSelectedPieceIdxOnClick(player1_alive_pieces, player1_alive_count);
-                if (selected_piece_idx < player1_alive_count){
-                    game_state = PLAYER2_SELECTING;
-                    strcpy(state_message, "Player2 is selecting...");
-                }
-                break;
-            case PLAYER1_SELECTING:
-                // DrawPossibleMoves(player1_alive_pieces, selected_piece_idx, true);
-                Piece current_piece = player1_alive_pieces[selected_piece_idx];
-                
-                switch (current_piece.type){
-                    case PAWN:
-                        int circle_radius = tile_size / 2;
-                        if (current_piece.board_pos_y == 1){
-                            DrawCircle(offset_x+current_piece.board_pos_x*tile_size+circle_radius, offset_y+2*tile_size+circle_radius, (float)circle_radius, RED);
-                            DrawCircle(offset_x+current_piece.board_pos_x*tile_size+circle_radius, offset_y+3*tile_size+circle_radius, (float)circle_radius, RED);
-                        }
-                        else {
-                            DrawCircle(offset_x+current_piece.board_pos_x*tile_size+circle_radius, offset_y+current_piece.board_pos_y+1*tile_size+circle_radius, (float)circle_radius, RED);
-                        }
-                        break;
-                    case ROOK:
-                        break;
-                    case KNIGHT:
-                        break;
-                    case BISHOP:
-                        break;
-                    case QUEEN:
-                        break;
-                    case KING:
-                        break;
-                    default:
-                        printf("omagaaaad");
-                        break;
-
-
+                selected_piece_idx = GetSelectedPieceIdxOnClick(player2_alive_pieces, player2_alive_count);
+                if (selected_piece_idx < player2_alive_count){
+                    DeterminePossibleMoves(
+                        player2_alive_pieces, player1_alive_pieces, 
+                        player2_alive_count, player1_alive_count, 
+                        selected_piece_idx, 
+                        possible_step_positions, &step_positions_len, 
+                        false
+                    );
                 }
 
-                break;
-            case PLAYER2_SELECTING:
-                // DrawPossibleMoves(player2_alive_pieces, selected_piece_idx, false);
-
+                for (int i=0; i<step_positions_len; i++){
+                    DrawRectangleV(possible_step_positions[i], tile_size_vec, marking_color);
+                }
 
                 break;
             case PLAYER1_WON:
