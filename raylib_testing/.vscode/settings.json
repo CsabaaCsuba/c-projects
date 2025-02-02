@@ -58,6 +58,7 @@
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
     "raylib.h": "c",
-    "typeinfo.h": "c"
+    "typeinfo.h": "c",
+    "stdint.h": "c"
   }
 }
