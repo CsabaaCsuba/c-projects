@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 // #include <stdlib.h>
 
 typedef enum {
@@ -29,6 +30,8 @@ const int offset_y = window_height / 2 - tile_size*8 / 2;
 Tile map[MAP_SIZE];
 
 Color current_color;
+
+Texture2D piece_texture;
 
 void InitTile(Tile* tile, PieceType piece, bool isUpper, bool isEmpty){
     if (tile != NULL){
@@ -74,43 +77,63 @@ void DrawCharacterOnCurrentTile(Tile tile, int tileIdx){
     if (tile.IsEmpty){
         return;
     }
+    char DrawnAssetPath[255] = "chess_assets/";
+    //for now, the upper player will be hardcoded to be the black
+    if (tile.IsUpperPlayer){
+        strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "b");
+    }
+    else {
+        strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "w");
+    }
+    printf("bruh: %s\n", DrawnAssetPath);
     switch (tile.CurrentPiece){
         //TODO: create an image array and a current_image variable later...
         case PAWN:
-            current_color = PURPLE;
+            // current_color = PURPLE;
+            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "P.png");
             break;
         case ROOK:
-            current_color = BLUE;
+            // current_color = BLUE;
+            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "R.png");
             break;
         case KNIGHT:
-            current_color = BROWN;
+            // current_color = BROWN;
+            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "K.png");
             break;
         case BISHOP:
-            current_color = YELLOW;
+            // current_color = YELLOW;
+            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "B.png");
             break;
         case QUEEN:
-            current_color = PINK;
+            // current_color = PINK;
+            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "Q.png");
             break;
         case KING:
-            current_color = GOLD;
+            // current_color = GOLD;
+            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "K.png");
             break;
         default:
             printf("unknown piece type: %d\n", tile.CurrentPiece);
             return;
     }
 
-    Color used_color;
-    if (tile.IsUpperPlayer){
-        used_color.r = current_color.r - (current_color.r)/3;
-        used_color.g = current_color.g - (current_color.g)/3;
-        used_color.b = current_color.b - (current_color.b)/3;
-        used_color.a = current_color.a;
-    }
-    else {
-        used_color = current_color;
-    }
 
-    DrawRectangle(offset_x+ tileIdx % 8 * tile_size, offset_y + tileIdx / 8 * tile_size, tile_size, tile_size, used_color);
+
+    printf("got path: %s\n", DrawnAssetPath);
+    // Color used_color;
+    // if (tile.IsUpperPlayer){
+    //     used_color.r = current_color.r - (current_color.r)/3;
+    //     used_color.g = current_color.g - (current_color.g)/3;
+    //     used_color.b = current_color.b - (current_color.b)/3;
+    //     used_color.a = current_color.a;
+    // }
+    // else {
+    //     used_color = current_color;
+    // }
+
+    // DrawRectangle(offset_x+ tileIdx % 8 * tile_size, offset_y + tileIdx / 8 * tile_size, tile_size, tile_size, used_color);
+    piece_texture = LoadTexture(DrawnAssetPath);
+    DrawTexture(piece_texture, offset_x+tileIdx%8*tile_size, offset_y+tileIdx/8*tile_size, WHITE);
     
 }
 
