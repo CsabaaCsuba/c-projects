@@ -59,6 +59,7 @@
   "files.associations": {
     "raylib.h": "c",
     "typeinfo.h": "c",
-    "stdint.h": "c"
+    "stdint.h": "c",
+    "stdint-gcc.h": "c"
   }
 }

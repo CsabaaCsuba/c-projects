@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 // #include <stdlib.h>
 
 typedef enum {
@@ -14,10 +15,23 @@ typedef enum {
     KING
 } PieceType;
 
+typedef enum {
+    PLAYER1_TURN,
+    PLAYER2_TURN,
+    GAME_OVER
+} GameState;
+
+typedef enum {
+    PLAYER1,
+    PLAYER2,
+    EMPTY
+} TileState;
+
 typedef struct {
     PieceType CurrentPiece;
-    bool IsUpperPlayer;
-    bool IsEmpty;
+    uint16_t pos_x;
+    uint16_t pos_y;
+    TileState CurrentOwner;
 } Tile;
 
 const int window_height = 600;
@@ -29,137 +43,236 @@ const int offset_y = window_height / 2 - tile_size*8 / 2;
 
 Tile map[MAP_SIZE];
 
+Color BackgroundColors[MAP_SIZE];
+
 Color current_color;
 
-Texture2D piece_texture;
+Texture2D PieceTextures[12];
 
-void InitTile(Tile* tile, PieceType piece, bool isUpper, bool isEmpty){
+char GameStateMsg[256];
+
+GameState CURRENT_GAME_STATE;
+
+uint8_t LatestClickIdx = 255;
+uint8_t SavedClickIdx = 255;
+
+void InitTextures(Texture2D* textureArr, int texturesLen){
+    Image CurrentImage;
+    Texture2D CurrentTexture;
+    CurrentImage = LoadImage("chess_assets/bB.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[0] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/bK.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[1] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/bN.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[2] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/bP.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[3] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/bQ.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[4] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/bR.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[5] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/wB.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[6] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/wK.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[7] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/wN.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[8] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/wP.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[9] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/wQ.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[10] = CurrentTexture;
+
+    CurrentImage = LoadImage("chess_assets/wR.png");
+    ImageResize(&CurrentImage, tile_size, tile_size);
+    CurrentTexture = LoadTextureFromImage(CurrentImage);
+    textureArr[11] = CurrentTexture;
+
+}
+
+void InitTile(Tile* tile, PieceType piece, TileState owner, uint8_t pos_x, uint8_t pos_y){
     if (tile != NULL){
         tile->CurrentPiece = piece;
-        tile->IsUpperPlayer = isUpper;
-        tile->IsEmpty = isEmpty;
+        tile->CurrentOwner = owner;
+        tile->pos_x = offset_x+pos_x*tile_size;
+        tile->pos_y = offset_y+pos_y*tile_size;
     }
 }
-void InitTileOnMap(Tile* map, int x, int y, PieceType piece, bool isUpper, bool isEmpty){
 
-}
     
 
 void LoadStartingMap(Tile* map, int mapLen){
-    InitTile(map, ROOK, true, false);
-    InitTile(map+1, KNIGHT, true, false);
-    InitTile(map+2, BISHOP, true, false);
-    InitTile(map+3, QUEEN, true, false);
-    InitTile(map+4, KING, true, false);
-    InitTile(map+5, BISHOP, true, false);
-    InitTile(map+6, KNIGHT, true, false);
-    InitTile(map+7, ROOK, true, false);
+    InitTile(map, ROOK, PLAYER1, 0, 0);
+    InitTile(map+1, KNIGHT, PLAYER1, 1, 0);
+    InitTile(map+2, BISHOP, PLAYER1, 2, 0);
+    InitTile(map+3, QUEEN, PLAYER1, 3, 0);
+    InitTile(map+4, KING, PLAYER1, 4, 0);
+    InitTile(map+5, BISHOP, PLAYER1, 5, 0);
+    InitTile(map+6, KNIGHT, PLAYER1, 6, 0);
+    InitTile(map+7, ROOK, PLAYER1, 7, 0);
     
     for (int i=0; i<8; i++){
-        InitTile(map+8+i, PAWN, true, false);
-        InitTile(map+(8*6)+i, PAWN, false, false); //lower player's characters
+        InitTile(map+8+i, PAWN, PLAYER1, i, 1);
+        InitTile(map+(8*6)+i, PAWN, PLAYER2, i, 6); //lower player's characters
     }
     for (int i=2*8; i<6*8; i++){
-        InitTile(map+i, REMOVED, false, true);
+        InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
     }
 
-    InitTile(map+(8*7), ROOK, false, false);
-    InitTile(map+(8*7)+1, KNIGHT, false, false);
-    InitTile(map+(8*7)+2, BISHOP, false, false);
-    InitTile(map+(8*7)+3, KING, false, false);
-    InitTile(map+(8*7)+4, QUEEN, false, false);
-    InitTile(map+(8*7)+5, BISHOP, false, false);
-    InitTile(map+(8*7)+6, KNIGHT, false, false);
-    InitTile(map+(8*7)+7, ROOK, false, false);
+    InitTile(map+(8*7), ROOK, PLAYER2, 0, 7);
+    InitTile(map+(8*7)+1, KNIGHT, PLAYER2, 1, 7);
+    InitTile(map+(8*7)+2, BISHOP, PLAYER2, 2, 7);
+    InitTile(map+(8*7)+3, KING, PLAYER2, 3, 7);
+    InitTile(map+(8*7)+4, QUEEN, PLAYER2, 4, 7);
+    InitTile(map+(8*7)+5, BISHOP, PLAYER2, 5, 7);
+    InitTile(map+(8*7)+6, KNIGHT, PLAYER2, 6, 7);
+    InitTile(map+(8*7)+7, ROOK, PLAYER2, 7, 7);
 }
 
 void DrawCharacterOnCurrentTile(Tile tile, int tileIdx){
-    if (tile.IsEmpty){
+    int textureIdx = 0;
+    if (tile.CurrentOwner == EMPTY){
         return;
     }
-    char DrawnAssetPath[255] = "chess_assets/";
-    //for now, the upper player will be hardcoded to be the black
-    if (tile.IsUpperPlayer){
-        strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "b");
-    }
-    else {
-        strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "w");
-    }
-    printf("bruh: %s\n", DrawnAssetPath);
+    
     switch (tile.CurrentPiece){
-        //TODO: create an image array and a current_image variable later...
         case PAWN:
-            // current_color = PURPLE;
-            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "P.png");
+            textureIdx = 3;
             break;
         case ROOK:
-            // current_color = BLUE;
-            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "R.png");
+            textureIdx = 5;
             break;
         case KNIGHT:
-            // current_color = BROWN;
-            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "K.png");
+            textureIdx = 2;
             break;
         case BISHOP:
-            // current_color = YELLOW;
-            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "B.png");
+            textureIdx = 0;
             break;
         case QUEEN:
-            // current_color = PINK;
-            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "Q.png");
+            textureIdx = 4;
             break;
         case KING:
-            // current_color = GOLD;
-            strcpy(DrawnAssetPath+strlen(DrawnAssetPath), "K.png");
+            textureIdx = 1;
             break;
         default:
             printf("unknown piece type: %d\n", tile.CurrentPiece);
             return;
     }
 
-
-
-    printf("got path: %s\n", DrawnAssetPath);
-    // Color used_color;
-    // if (tile.IsUpperPlayer){
-    //     used_color.r = current_color.r - (current_color.r)/3;
-    //     used_color.g = current_color.g - (current_color.g)/3;
-    //     used_color.b = current_color.b - (current_color.b)/3;
-    //     used_color.a = current_color.a;
-    // }
-    // else {
-    //     used_color = current_color;
-    // }
-
-    // DrawRectangle(offset_x+ tileIdx % 8 * tile_size, offset_y + tileIdx / 8 * tile_size, tile_size, tile_size, used_color);
-    piece_texture = LoadTexture(DrawnAssetPath);
-    DrawTexture(piece_texture, offset_x+tileIdx%8*tile_size, offset_y+tileIdx/8*tile_size, WHITE);
+    if (tile.CurrentOwner == PLAYER1){
+        textureIdx += 6;
+    }
     
+    DrawTexture(PieceTextures[textureIdx], offset_x+tileIdx%8*tile_size, offset_y+tileIdx/8*tile_size, WHITE);
+}
+
+void InitBackground(Color* colorsArr){
+    for (int i=0; i<8; i++){ //rows (y coordinate)
+        for (int j=0; j<8; j++){ //columns (x coordinate)
+            if (i % 2 == 1){
+                colorsArr[i*8+j] = (j % 2 == 1 ) ? WHITE : BLACK;
+            }
+            else { //if i % 2 == 0
+                colorsArr[i*8+j] = (j % 2 == 1) ? BLACK : WHITE;
+            }
+        }
+    }
+    
+}
+
+uint8_t GetClickedTileIdx(Tile* map){
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 mouse_pos = GetMousePosition();
+        uint16_t mouse_x = (uint16_t)mouse_pos.x;
+        uint16_t mouse_y = (uint16_t)mouse_pos.y;
+
+        for (int i=0; i<MAP_SIZE; i++){
+            if (mouse_x > map[i].pos_x && mouse_x < map[i].pos_x+tile_size
+                && mouse_y > map[i].pos_y && mouse_y < map[i].pos_y+tile_size){
+                return i;
+            }
+        }
+    }
+    return 255;
 }
 
 int main(){
     LoadStartingMap(map, MAP_SIZE);
     InitWindow(window_width, window_height, "Chess Gameplay");
+    SetTraceLogLevel(LOG_ERROR); 
+    InitTextures(PieceTextures, 12);
+    InitBackground(BackgroundColors);
+
+    strcpy(GameStateMsg, "player1's turn");
+    
+    CURRENT_GAME_STATE = PLAYER1_TURN; //player 1 starts for now
+
+
 
     while (!WindowShouldClose()){
         BeginDrawing();
         ClearBackground(GRAY);
-        for (int i=0; i<8; i++){ //rows (y coordinate)
-            for (int j=0; j<8; j++){ //columns (x coordinate)
-                if (i % 2 == 1){
-                    current_color = (j % 2 == 1 ) ? WHITE : BLACK;
-                }
-                else { //if i % 2 == 0
-                    current_color = (j % 2 == 1) ? BLACK : WHITE;
-                }
-                DrawRectangle(offset_x+j*tile_size, offset_y+i*tile_size, tile_size, tile_size, current_color);
-            }
-        }
+        
+        
         for (int i=0; i<MAP_SIZE; i++){
+            DrawRectangle(offset_x+i%8*tile_size, offset_y+i/8*tile_size, tile_size, tile_size, BackgroundColors[i]);
             DrawCharacterOnCurrentTile(map[i], i);
         }
 
+        LatestClickIdx = GetClickedTileIdx(map);
+        if (LatestClickIdx < MAP_SIZE){
+            SavedClickIdx = LatestClickIdx;
+            printf("click registered on: %d\n", SavedClickIdx);
+        }
+        
 
+        if (CURRENT_GAME_STATE == PLAYER1_TURN){
+            if (SavedClickIdx == 255){
+                
+            }
+            else {
+                Tile current_tile = map[SavedClickIdx];
+                if (current_tile.CurrentOwner == PLAYER1){
+                    printf("Player clicked his own tile.\n");
+                }
+            }
+            
+        }
+
+
+
+        DrawText(GameStateMsg, offset_x+tile_size*2, 20, 20, BLACK);
         DrawFPS(0, 0);
         EndDrawing();
     }
