@@ -56,6 +56,10 @@ GameState CURRENT_GAME_STATE;
 uint8_t LatestClickIdx = 255;
 uint8_t SavedClickIdx = 255;
 
+uint8_t TraversableTileIndices[21]; //because the queen can travel to up to 21 tiles in one step.
+uint8_t TraversablesLen = 0;
+
+
 void InitTextures(Texture2D* textureArr, int texturesLen){
     Image CurrentImage;
     Texture2D CurrentTexture;
@@ -129,8 +133,6 @@ void InitTile(Tile* tile, PieceType piece, TileState owner, uint8_t pos_x, uint8
         tile->pos_y = offset_y+pos_y*tile_size;
     }
 }
-
-    
 
 void LoadStartingMap(Tile* map, int mapLen){
     InitTile(map, ROOK, PLAYER1, 0, 0);
@@ -227,6 +229,59 @@ uint8_t GetClickedTileIdx(Tile* map){
     return 255;
 }
 
+void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t TraversablesLen){
+    uint8_t SavedEnemies[8] = {255, 255, 255, 255, 255, 255, 255, 255};
+    uint8_t EnemiesIdx = 0;
+
+    uint8_t SavedPosX = map[currentTileIdx].pos_x;
+    uint8_t SavedPosY = map[currentTileIdx].pos_y;
+    switch (map[currentTileIdx].CurrentPiece){
+        case PAWN:
+            break;
+        case ROOK:
+            for (uint8_t i=0; i<MAP_SIZE; i++){
+                //If both are the same, we are iterating over the current tile. This should be skipped
+                if (i == currentTileIdx){
+                    TraversablesLen = 0;
+                    return;
+                }
+                //rook can mostly step everywhere, where the tile.y OR tile.x is the same. 
+                if (map[i].pos_x == SavedPosX || map[i].pos_y == SavedPosY){
+                    if (map[i].CurrentOwner == map[currentTileIdx].CurrentOwner){
+                        //do nothing
+                    }
+                    else if (map[i].CurrentOwner == EMPTY){
+                        TraversableTileIndices[TraversablesLen] = i;
+                        TraversablesLen += 1;
+                    }
+                    //if the current iterated tile is the other player's
+                    else {
+
+                        if (map[i].pos_x == SavedPosX){
+                            //if the y values should be checked
+                            if (map[i].pos_y > SavedPosY){
+
+                            }
+                        }
+                        else if (map[i].pos_y == SavedPosY){
+                            //if the x values should be checked
+                        }
+                        
+                    }
+                }
+            }
+            break;
+
+        case KING:
+
+            break;
+        
+        default:
+            printf("not implemented piece on the tile: %d", map[currentTileIdx].CurrentPiece);
+            break;
+    }
+}
+
 int main(){
     LoadStartingMap(map, MAP_SIZE);
     InitWindow(window_width, window_height, "Chess Gameplay");
@@ -266,17 +321,19 @@ int main(){
                 if (current_tile.CurrentOwner == PLAYER1){
                     printf("Player clicked his own tile.\n");
                 }
+                
             }
-            
         }
+        else if (CURRENT_GAME_STATE == PLAYER2_TURN){
 
-
+        }
 
         DrawText(GameStateMsg, offset_x+tile_size*2, 20, 20, BLACK);
         DrawFPS(0, 0);
         EndDrawing();
-    }
 
-    CloseWindow();
-    return 0;
+        CloseWindow();
+        return 0;
+    
+    }
 }
