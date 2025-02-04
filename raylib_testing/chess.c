@@ -229,7 +229,27 @@ uint8_t GetClickedTileIdx(Tile* map){
     return 255;
 }
 
-void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t TraversablesLen){
+void CalculateXAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+
+}
+
+void CalculateYAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+    
+}
+
+void CalculateXAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+    
+}
+
+void CalculateRightSideMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+
+}
+
+void CalculateLeftSideMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+    
+}
+
+void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
     uint8_t SavedEnemies[8] = {255, 255, 255, 255, 255, 255, 255, 255};
     uint8_t EnemiesIdx = 0;
 
@@ -239,37 +259,8 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
         case PAWN:
             break;
         case ROOK:
-            for (uint8_t i=0; i<MAP_SIZE; i++){
-                //If both are the same, we are iterating over the current tile. This should be skipped
-                if (i == currentTileIdx){
-                    TraversablesLen = 0;
-                    return;
-                }
-                //rook can mostly step everywhere, where the tile.y OR tile.x is the same. 
-                if (map[i].pos_x == SavedPosX || map[i].pos_y == SavedPosY){
-                    if (map[i].CurrentOwner == map[currentTileIdx].CurrentOwner){
-                        //do nothing
-                    }
-                    else if (map[i].CurrentOwner == EMPTY){
-                        TraversableTileIndices[TraversablesLen] = i;
-                        TraversablesLen += 1;
-                    }
-                    //if the current iterated tile is the other player's
-                    else {
-
-                        if (map[i].pos_x == SavedPosX){
-                            //if the y values should be checked
-                            if (map[i].pos_y > SavedPosY){
-
-                            }
-                        }
-                        else if (map[i].pos_y == SavedPosY){
-                            //if the x values should be checked
-                        }
-                        
-                    }
-                }
-            }
+            CalculateXAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            CalculateYAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             break;
 
         case KING:
