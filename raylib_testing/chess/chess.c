@@ -237,9 +237,6 @@ void CalculateYAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* Traversa
     
 }
 
-void CalculateXAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
-    
-}
 
 void CalculateRightSideMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
 
@@ -323,8 +320,9 @@ int main(){
         DrawFPS(0, 0);
         EndDrawing();
 
-        CloseWindow();
-        return 0;
-    
+        
+        
     }
+    CloseWindow();
+    return 0;
 }
