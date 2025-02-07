@@ -135,31 +135,35 @@ void InitTile(Tile* tile, PieceType piece, TileState owner, uint8_t pos_x, uint8
 }
 
 void LoadStartingMap(Tile* map, int mapLen){
-    InitTile(map, ROOK, PLAYER1, 0, 0);
-    InitTile(map+1, KNIGHT, PLAYER1, 1, 0);
-    InitTile(map+2, BISHOP, PLAYER1, 2, 0);
-    InitTile(map+3, QUEEN, PLAYER1, 3, 0);
-    InitTile(map+4, KING, PLAYER1, 4, 0);
-    InitTile(map+5, BISHOP, PLAYER1, 5, 0);
-    InitTile(map+6, KNIGHT, PLAYER1, 6, 0);
-    InitTile(map+7, ROOK, PLAYER1, 7, 0);
-    
-    for (int i=0; i<8; i++){
-        InitTile(map+8+i, PAWN, PLAYER1, i, 1);
-        InitTile(map+(8*6)+i, PAWN, PLAYER2, i, 6); //lower player's characters
-    }
-    for (int i=2*8; i<6*8; i++){
+    for (int i=0; i<MAP_SIZE; i++){
         InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
     }
+    InitTile(map+3*8+3, ROOK, PLAYER1, 3, 3);
+    // InitTile(map, ROOK, PLAYER1, 0, 0);
+    // InitTile(map+1, KNIGHT, PLAYER1, 1, 0);
+    // InitTile(map+2, BISHOP, PLAYER1, 2, 0);
+    // InitTile(map+3, QUEEN, PLAYER1, 3, 0);
+    // InitTile(map+4, KING, PLAYER1, 4, 0);
+    // InitTile(map+5, BISHOP, PLAYER1, 5, 0);
+    // InitTile(map+6, KNIGHT, PLAYER1, 6, 0);
+    // InitTile(map+7, ROOK, PLAYER1, 7, 0);
+    
+    // for (int i=0; i<8; i++){
+    //     InitTile(map+8+i, PAWN, PLAYER1, i, 1);
+    //     InitTile(map+(8*6)+i, PAWN, PLAYER2, i, 6); //lower player's characters
+    // }
+    // for (int i=2*8; i<6*8; i++){
+    //     InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
+    // }
 
-    InitTile(map+(8*7), ROOK, PLAYER2, 0, 7);
-    InitTile(map+(8*7)+1, KNIGHT, PLAYER2, 1, 7);
-    InitTile(map+(8*7)+2, BISHOP, PLAYER2, 2, 7);
-    InitTile(map+(8*7)+3, KING, PLAYER2, 3, 7);
-    InitTile(map+(8*7)+4, QUEEN, PLAYER2, 4, 7);
-    InitTile(map+(8*7)+5, BISHOP, PLAYER2, 5, 7);
-    InitTile(map+(8*7)+6, KNIGHT, PLAYER2, 6, 7);
-    InitTile(map+(8*7)+7, ROOK, PLAYER2, 7, 7);
+    // InitTile(map+(8*7), ROOK, PLAYER2, 0, 7);
+    // InitTile(map+(8*7)+1, KNIGHT, PLAYER2, 1, 7);
+    // InitTile(map+(8*7)+2, BISHOP, PLAYER2, 2, 7);
+    // InitTile(map+(8*7)+3, KING, PLAYER2, 3, 7);
+    // InitTile(map+(8*7)+4, QUEEN, PLAYER2, 4, 7);
+    // InitTile(map+(8*7)+5, BISHOP, PLAYER2, 5, 7);
+    // InitTile(map+(8*7)+6, KNIGHT, PLAYER2, 6, 7);
+    // InitTile(map+(8*7)+7, ROOK, PLAYER2, 7, 7);
 }
 
 void DrawCharacterOnCurrentTile(Tile tile, int tileIdx){
@@ -229,8 +233,92 @@ uint8_t GetClickedTileIdx(Tile* map){
     return 255;
 }
 
-void CalculateXAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+void DrawTraversableTiles(uint8_t* TraversableTileIndices, uint8_t TraversablesLen){
+    if (TraversablesLen > MAP_SIZE){
+        printf("\ntraversables len is %d, and MAP_SIZE is %d. Big error happened.\n", TraversablesLen, MAP_SIZE);
+        return;
+    }
+    for (int i=0; i<TraversablesLen; i++){
+        printf("Traversable indice: %d\n", TraversableTileIndices[i]);
+    }
+}
 
+void CheckTile(TileState CurrentTileOwner, TileState TileOwner, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen, uint8_t TileIdx){
+    TileState Enemy;
+    if (CurrentTileOwner == TileOwner){
+        return;
+        //do nothing
+    }
+    else {
+        if (TileOwner == PLAYER1){
+            Enemy = PLAYER2;
+        }
+        else {
+            Enemy = PLAYER1;
+        }
+        if (CurrentTileOwner == Enemy){
+            TraversableTileIndices[*TraversablesLen] = TileIdx;
+            *TraversablesLen += 1;
+            return;
+        }
+        else {
+            TraversableTileIndices[*TraversablesLen] = TileIdx;
+            *TraversablesLen += 1;
+        }
+    }
+}
+
+void CalculateXAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+    TileState TileOwner = map[currentTileIdx].CurrentOwner;
+    TileState Enemy;
+    // printf("Current tile's idx: %d", currentTileIdx);
+    for (int i=currentTileIdx; i<=((i/8)+1)*8+8; i++){
+        if (map[i].CurrentOwner == TileOwner){
+            break;
+            //do nothing
+        }
+        else {
+            if (TileOwner == PLAYER1){
+                Enemy = PLAYER2;
+            }
+            else {
+                Enemy = PLAYER1;
+            }
+            if (map[i].CurrentOwner == Enemy){
+                TraversableTileIndices[*TraversablesLen] = i;
+                *TraversablesLen += 1;
+                break;
+            }
+            else {
+                TraversableTileIndices[*TraversablesLen] = i;
+                *TraversablesLen += 1;
+            }
+        }
+    }
+    for (int i=currentTileIdx; i>=((i/8)+1)*8; i--){
+        CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i);
+        // if (map[i].CurrentOwner == TileOwner){
+        //     break;
+        //     //do nothing
+        // }
+        // else {
+        //     if (TileOwner == PLAYER1){
+        //         Enemy = PLAYER2;
+        //     }
+        //     else {
+        //         Enemy = PLAYER1;
+        //     }
+        //     if (map[i].CurrentOwner == Enemy){
+        //         TraversableTileIndices[*TraversablesLen] = i;
+        //         *TraversablesLen += 1;
+        //         break;
+        //     }
+        //     else {
+        //         TraversableTileIndices[*TraversablesLen] = i;
+        //         *TraversablesLen += 1;
+        //     }
+        // }
+    }
 }
 
 void CalculateYAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
@@ -256,6 +344,7 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
         case PAWN:
             break;
         case ROOK:
+            *TraversablesLen = 0;
             CalculateXAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             CalculateYAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             break;
@@ -265,7 +354,7 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
             break;
         
         default:
-            printf("not implemented piece on the tile: %d", map[currentTileIdx].CurrentPiece);
+            printf("not implemented piece on the tile: %d\n", map[currentTileIdx].CurrentPiece);
             break;
     }
 }
@@ -301,13 +390,16 @@ int main(){
         
 
         if (CURRENT_GAME_STATE == PLAYER1_TURN){
+            DrawTraversableTiles(TraversableTileIndices, TraversablesLen);
             if (SavedClickIdx == 255){
                 
             }
             else {
                 Tile current_tile = map[SavedClickIdx];
                 if (current_tile.CurrentOwner == PLAYER1){
-                    printf("Player clicked his own tile.\n");
+                    // printf("Player clicked his own tile.\n");
+                    CalculateTraversableTiles(map, SavedClickIdx, TraversableTileIndices, &TraversablesLen);
+                    
                 }
                 
             }
