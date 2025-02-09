@@ -59,6 +59,7 @@ uint8_t SavedClickIdx = 255;
 uint8_t TraversableTileIndices[21]; //because the queen can travel to up to 21 tiles in one step.
 uint8_t TraversablesLen = 0;
 
+uint8_t SavedPlayerIdx = 255;
 
 void InitTextures(Texture2D* textureArr, int texturesLen){
     Image CurrentImage;
@@ -139,7 +140,7 @@ void LoadStartingMap(Tile* map, int mapLen){
     for (int i=0; i<MAP_SIZE; i++){
         InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
     }
-    InitTile(map+2*8+5, QUEEN, PLAYER1, 5, 2);
+    InitTile(map+3*8+3, QUEEN, PLAYER1, 3, 3);
     InitTile(map+(8*6)+1, ROOK, PLAYER1, 1, 6);
     InitTile(map+3*8+5, ROOK, PLAYER2, 5, 3);
 
@@ -255,7 +256,7 @@ void DrawTraversableTiles(uint8_t* TraversableTileIndices, uint8_t TraversablesL
 //returns true if tiles in this path cannot be further traversed.
 bool CheckTile(TileState CurrentTileOwner, TileState TileOwner, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen, uint8_t TileIdx){
     TileState Enemy;
-    if (CurrentTileOwner == TileOwner){
+    if (CurrentTileOwner == TileOwner || TileIdx >= MAP_SIZE){
         return true;
         //do nothing
     }
@@ -284,7 +285,7 @@ void CalculateXAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* Traversa
     TileState TileOwner = map[currentTileIdx].CurrentOwner;
     TileState Enemy;
     // printf("Current tile's idx: %d\n", currentTileIdx);
-    for (int i=currentTileIdx-1; i>(i%8)*8; i--){
+    for (int i=currentTileIdx-1; i>=(i%8)*8; i--){
         if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
             break;
         }
@@ -301,8 +302,9 @@ void CalculateYAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* Traversa
     TileState TileOwner = map[currentTileIdx].CurrentOwner;
     TileState Enemy;
     // printf("Current tile's idx: %d\n", currentTileIdx);
-    for (int i=currentTileIdx-8; i>(i/8)*8; i-=8){
+    for (int i=currentTileIdx-8; i>=(i/8)*8; i-=8){
         if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
+            printf("movement calculation broken.\n");
             break;
         }
     }
@@ -347,8 +349,8 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
         
         case BISHOP:
             *TraversablesLen = 0;
-            CalculateRightSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
-            CalculateLeftSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            // CalculateRightSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            // CalculateLeftSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             break;
 
         case QUEEN:
@@ -356,8 +358,8 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
             CalculateXAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             CalculateYAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
 
-            CalculateRightSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
-            CalculateLeftSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            // CalculateRightSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            // CalculateLeftSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             break;
         case KING:
             *TraversablesLen = 0;
@@ -367,6 +369,22 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
             printf("not implemented piece on the tile: %d\n", map[currentTileIdx].CurrentPiece);
             break;
     }
+}
+
+void Move(Tile* map, uint8_t fromIdx, uint8_t toIdx){
+    if (fromIdx >= MAP_SIZE || toIdx >= MAP_SIZE){
+        printf("the idx of moved player's tile (%d) or the traversed tile(%d) is too large. \n", fromIdx, toIdx);
+        return;
+    }
+    if (map[toIdx].CurrentOwner == map[fromIdx].CurrentOwner){
+        printf("some bug happened. target tile's owner is the same as current tile's owner\n");   
+    }
+    map[toIdx].CurrentOwner = map[fromIdx].CurrentOwner;
+    map[toIdx].CurrentPiece = map[fromIdx].CurrentPiece;
+
+    map[fromIdx].CurrentOwner = EMPTY;
+    map[fromIdx].CurrentPiece = REMOVED;
+
 }
 
 int main(){
@@ -409,9 +427,21 @@ int main(){
             else {
                 Tile current_tile = map[SavedClickIdx];
                 if (current_tile.CurrentOwner == PLAYER1){
-                    printf("Player clicked his own tile.\n");
-                    CalculateTraversableTiles(map, SavedClickIdx, TraversableTileIndices, &TraversablesLen);
+                    if (SavedClickIdx != SavedPlayerIdx){
+                        printf("Player clicked his own tile.\n");
+                    }
                     
+                    CalculateTraversableTiles(map, SavedClickIdx, TraversableTileIndices, &TraversablesLen);
+                    SavedPlayerIdx = SavedClickIdx;
+                }
+                //IF 
+                else {
+                    for (int i=0; i<TraversablesLen; i++){
+                        if (SavedClickIdx == TraversableTileIndices[i]){
+                            // printf("%d has moved.\n", current_tile.CurrentPiece);
+                            Move(map, SavedPlayerIdx, SavedClickIdx);
+                        }
+                    }
                 }
                 
             }
