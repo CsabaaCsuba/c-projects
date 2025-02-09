@@ -51,7 +51,8 @@ Texture2D PieceTextures[12];
 
 char GameStateMsg[256];
 
-GameState CURRENT_GAME_STATE;
+// GameState CURRENT_GAME_STATE;
+TileState CURRENT_PLAYER = PLAYER1;
 
 uint8_t LatestClickIdx = 255;
 uint8_t SavedClickIdx = 255;
@@ -141,8 +142,10 @@ void LoadStartingMap(Tile* map, int mapLen){
         InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
     }
     InitTile(map+3*8+3, QUEEN, PLAYER1, 3, 3);
-    InitTile(map+(8*6)+1, ROOK, PLAYER1, 1, 6);
-    InitTile(map+3*8+5, ROOK, PLAYER2, 5, 3);
+    InitTile(map+(8*6)+1, KING, PLAYER1, 1, 6);
+    InitTile(map+3*8+5, KING, PLAYER2, 5, 3);
+
+    InitTile(map+3*8+6, QUEEN, PLAYER2, 6, 3);
 
     //ACTUAL TABLE HERE:
 
@@ -386,13 +389,28 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
     }
 }
 
-void Move(Tile* map, uint8_t fromIdx, uint8_t toIdx){
+void DrawResartButton(){
+    DrawRectangle(window_width/2-60, window_height/2-20, 120, 40, GREEN);
+    DrawText("Restart", window_width/2-60, window_height/2-20, 24, BLACK);
+}
+
+void Move(Tile* map, uint8_t fromIdx, uint8_t toIdx, TileState* currentPlayer, char* gameStateMsgBuf){
     if (fromIdx >= MAP_SIZE || toIdx >= MAP_SIZE){
         printf("the idx of moved player's tile (%d) or the traversed tile(%d) is too large. \n", fromIdx, toIdx);
         return;
     }
     if (map[toIdx].CurrentOwner == map[fromIdx].CurrentOwner){
         printf("some bug happened. target tile's owner is the same as current tile's owner\n");   
+    }
+    if (map[toIdx].CurrentPiece == KING){
+        *currentPlayer = EMPTY;
+        if (map[fromIdx].CurrentOwner == PLAYER1){
+            strcpy(gameStateMsgBuf, "player1 won!");
+        }
+        else if (map[fromIdx].CurrentOwner == PLAYER2){
+            strcpy(gameStateMsgBuf, "player2 won!");
+        }
+        
     }
     map[toIdx].CurrentOwner = map[fromIdx].CurrentOwner;
     map[toIdx].CurrentPiece = map[fromIdx].CurrentPiece;
@@ -401,6 +419,7 @@ void Move(Tile* map, uint8_t fromIdx, uint8_t toIdx){
     map[fromIdx].CurrentPiece = REMOVED;
 
 }
+
 
 int main(){
     SetTargetFPS(60);
@@ -412,13 +431,14 @@ int main(){
 
     strcpy(GameStateMsg, "player1's turn");
     
-    CURRENT_GAME_STATE = PLAYER1_TURN; //player 1 starts for now
-
+    // CURRENT_GAME_STATE = PLAYER1_TURN; //player 1 starts for now
+    CURRENT_PLAYER = PLAYER1;
 
 
     while (!WindowShouldClose()){
         BeginDrawing();
         ClearBackground(GRAY);
+        
         
         
         for (int i=0; i<MAP_SIZE; i++){
@@ -432,39 +452,47 @@ int main(){
             SavedClickIdx = LatestClickIdx;
             printf("click registered on: %d\n", SavedClickIdx);
         }
+        if (CURRENT_PLAYER == EMPTY){
+            DrawResartButton();
+            goto LoopEnd;
+        }
+
+        DrawTraversableTiles(TraversableTileIndices, TraversablesLen);
+        if (SavedClickIdx != 255){
+            Tile current_tile = map[SavedClickIdx];
+            if (current_tile.CurrentOwner == CURRENT_PLAYER){
+                if (SavedClickIdx != SavedPlayerIdx){
+                    printf("Player clicked his own tile.\n");
+                }
+                
+                CalculateTraversableTiles(map, SavedClickIdx, TraversableTileIndices, &TraversablesLen);
+                SavedPlayerIdx = SavedClickIdx;
+            }
+            //if a tile that isn't player's got clicked, check if that tile is in the TraversableIndices array
+            else {
+                for (int i=0; i<TraversablesLen; i++){
+                    if (SavedClickIdx == TraversableTileIndices[i]){
+                        // printf("%d has moved.\n", current_tile.CurrentPiece);
+                        Move(map, SavedPlayerIdx, SavedClickIdx, &CURRENT_PLAYER, GameStateMsg);
+                        if (CURRENT_PLAYER == PLAYER1){
+                            CURRENT_PLAYER = PLAYER2;
+                            strcpy(GameStateMsg, "player2's turn");
+                        }
+                        else if (CURRENT_PLAYER == PLAYER2){
+                            CURRENT_PLAYER = PLAYER1;
+                            strcpy(GameStateMsg, "player1's turn");
+                        }
+                        TraversablesLen = 0;
+                        SavedClickIdx = 255;
+                        SavedPlayerIdx = 255;
+                    }
+                }
+            }
+            
+        }
         
 
-        if (CURRENT_GAME_STATE == PLAYER1_TURN){
-            DrawTraversableTiles(TraversableTileIndices, TraversablesLen);
-            if (SavedClickIdx == 255){
-                
-            }
-            else {
-                Tile current_tile = map[SavedClickIdx];
-                if (current_tile.CurrentOwner == PLAYER1){
-                    if (SavedClickIdx != SavedPlayerIdx){
-                        printf("Player clicked his own tile.\n");
-                    }
-                    
-                    CalculateTraversableTiles(map, SavedClickIdx, TraversableTileIndices, &TraversablesLen);
-                    SavedPlayerIdx = SavedClickIdx;
-                }
-                //IF 
-                else {
-                    for (int i=0; i<TraversablesLen; i++){
-                        if (SavedClickIdx == TraversableTileIndices[i]){
-                            // printf("%d has moved.\n", current_tile.CurrentPiece);
-                            Move(map, SavedPlayerIdx, SavedClickIdx);
-                        }
-                    }
-                }
-                
-            }
-        }
-        else if (CURRENT_GAME_STATE == PLAYER2_TURN){
-
-        }
-
+        LoopEnd:
         DrawText(GameStateMsg, offset_x+tile_size*2, 20, 20, BLACK);
         DrawFPS(0, 0);
         EndDrawing();
