@@ -135,10 +135,16 @@ void InitTile(Tile* tile, PieceType piece, TileState owner, uint8_t pos_x, uint8
 }
 
 void LoadStartingMap(Tile* map, int mapLen){
+    //THESE ARE FOR TESTING ONLY:
     for (int i=0; i<MAP_SIZE; i++){
         InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
     }
-    InitTile(map+3*8+3, ROOK, PLAYER1, 3, 3);
+    InitTile(map+2*8+5, QUEEN, PLAYER1, 5, 2);
+    InitTile(map+(8*6)+1, ROOK, PLAYER1, 1, 6);
+    InitTile(map+3*8+5, ROOK, PLAYER2, 5, 3);
+
+    //ACTUAL TABLE HERE:
+
     // InitTile(map, ROOK, PLAYER1, 0, 0);
     // InitTile(map+1, KNIGHT, PLAYER1, 1, 0);
     // InitTile(map+2, BISHOP, PLAYER1, 2, 0);
@@ -224,8 +230,10 @@ uint8_t GetClickedTileIdx(Tile* map){
         uint16_t mouse_y = (uint16_t)mouse_pos.y;
 
         for (int i=0; i<MAP_SIZE; i++){
-            if (mouse_x > map[i].pos_x && mouse_x < map[i].pos_x+tile_size
-                && mouse_y > map[i].pos_y && mouse_y < map[i].pos_y+tile_size){
+            // printf("pos checked at: x=%d, y=%d\n", map[i].pos_x, map[i].pos_y);
+            
+            if (mouse_x >= map[i].pos_x && mouse_x <= map[i].pos_x+tile_size
+                && mouse_y >= map[i].pos_y && mouse_y <= map[i].pos_y+tile_size){
                 return i;
             }
         }
@@ -239,14 +247,16 @@ void DrawTraversableTiles(uint8_t* TraversableTileIndices, uint8_t TraversablesL
         return;
     }
     for (int i=0; i<TraversablesLen; i++){
-        printf("Traversable indice: %d\n", TraversableTileIndices[i]);
+        DrawRectangle(offset_x+TraversableTileIndices[i]%8*tile_size, offset_y+TraversableTileIndices[i]/8*tile_size, tile_size, tile_size, (Color){240, 0, 0, 120});
+        // printf("Traversable index: %d\n", TraversableTileIndices[i]);
     }
 }
 
-void CheckTile(TileState CurrentTileOwner, TileState TileOwner, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen, uint8_t TileIdx){
+//returns true if tiles in this path cannot be further traversed.
+bool CheckTile(TileState CurrentTileOwner, TileState TileOwner, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen, uint8_t TileIdx){
     TileState Enemy;
     if (CurrentTileOwner == TileOwner){
-        return;
+        return true;
         //do nothing
     }
     else {
@@ -259,74 +269,55 @@ void CheckTile(TileState CurrentTileOwner, TileState TileOwner, uint8_t* Travers
         if (CurrentTileOwner == Enemy){
             TraversableTileIndices[*TraversablesLen] = TileIdx;
             *TraversablesLen += 1;
-            return;
+            return true;
         }
         else {
             TraversableTileIndices[*TraversablesLen] = TileIdx;
             *TraversablesLen += 1;
+            
         }
     }
+    return false;
 }
 
 void CalculateXAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
     TileState TileOwner = map[currentTileIdx].CurrentOwner;
     TileState Enemy;
-    // printf("Current tile's idx: %d", currentTileIdx);
-    for (int i=currentTileIdx; i<=((i/8)+1)*8+8; i++){
-        if (map[i].CurrentOwner == TileOwner){
+    // printf("Current tile's idx: %d\n", currentTileIdx);
+    for (int i=currentTileIdx-1; i>(i%8)*8; i--){
+        if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
             break;
-            //do nothing
-        }
-        else {
-            if (TileOwner == PLAYER1){
-                Enemy = PLAYER2;
-            }
-            else {
-                Enemy = PLAYER1;
-            }
-            if (map[i].CurrentOwner == Enemy){
-                TraversableTileIndices[*TraversablesLen] = i;
-                *TraversablesLen += 1;
-                break;
-            }
-            else {
-                TraversableTileIndices[*TraversablesLen] = i;
-                *TraversablesLen += 1;
-            }
         }
     }
-    for (int i=currentTileIdx; i>=((i/8)+1)*8; i--){
-        CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i);
-        // if (map[i].CurrentOwner == TileOwner){
-        //     break;
-        //     //do nothing
-        // }
-        // else {
-        //     if (TileOwner == PLAYER1){
-        //         Enemy = PLAYER2;
-        //     }
-        //     else {
-        //         Enemy = PLAYER1;
-        //     }
-        //     if (map[i].CurrentOwner == Enemy){
-        //         TraversableTileIndices[*TraversablesLen] = i;
-        //         *TraversablesLen += 1;
-        //         break;
-        //     }
-        //     else {
-        //         TraversableTileIndices[*TraversablesLen] = i;
-        //         *TraversablesLen += 1;
-        //     }
-        // }
+    for (int i=currentTileIdx+1; i<(i%8)*8+8; i++){
+        if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
+            break;
+        }
     }
+    
 }
 
 void CalculateYAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+    TileState TileOwner = map[currentTileIdx].CurrentOwner;
+    TileState Enemy;
+    // printf("Current tile's idx: %d\n", currentTileIdx);
+    for (int i=currentTileIdx-8; i>(i/8)*8; i-=8){
+        if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
+            break;
+        }
+    }
+    for (int i=(currentTileIdx/8)*8+(currentTileIdx%8)+8; i<MAP_SIZE; i+=8){
+        if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
+            break;
+        }
+    }
     
 }
 
 
 void CalculateRightSideMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+    TileState TileOwner = map[currentTileIdx].CurrentOwner;
+    TileState Enemy;
 
 }
 
@@ -342,6 +333,7 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
     uint8_t SavedPosY = map[currentTileIdx].pos_y;
     switch (map[currentTileIdx].CurrentPiece){
         case PAWN:
+            *TraversablesLen = 0;
             break;
         case ROOK:
             *TraversablesLen = 0;
@@ -349,8 +341,26 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
             CalculateYAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             break;
 
-        case KING:
+        case KNIGHT:
+            *TraversablesLen = 0;
+            break;
+        
+        case BISHOP:
+            *TraversablesLen = 0;
+            CalculateRightSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            CalculateLeftSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            break;
 
+        case QUEEN:
+            *TraversablesLen = 0;
+            CalculateXAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            CalculateYAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+
+            CalculateRightSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            CalculateLeftSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            break;
+        case KING:
+            *TraversablesLen = 0;
             break;
         
         default:
@@ -360,6 +370,7 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
 }
 
 int main(){
+    SetTargetFPS(60);
     LoadStartingMap(map, MAP_SIZE);
     InitWindow(window_width, window_height, "Chess Gameplay");
     SetTraceLogLevel(LOG_ERROR); 
@@ -383,6 +394,7 @@ int main(){
         }
 
         LatestClickIdx = GetClickedTileIdx(map);
+        // printf("latest click: %d\n", LatestClickIdx);
         if (LatestClickIdx < MAP_SIZE){
             SavedClickIdx = LatestClickIdx;
             printf("click registered on: %d\n", SavedClickIdx);
@@ -397,7 +409,7 @@ int main(){
             else {
                 Tile current_tile = map[SavedClickIdx];
                 if (current_tile.CurrentOwner == PLAYER1){
-                    // printf("Player clicked his own tile.\n");
+                    printf("Player clicked his own tile.\n");
                     CalculateTraversableTiles(map, SavedClickIdx, TraversableTileIndices, &TraversablesLen);
                     
                 }
