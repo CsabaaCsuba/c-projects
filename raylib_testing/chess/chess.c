@@ -284,12 +284,12 @@ bool CheckTile(TileState CurrentTileOwner, TileState TileOwner, uint8_t* Travers
 void CalculateXAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
     TileState TileOwner = map[currentTileIdx].CurrentOwner;
 
-    for (int i = currentTileIdx - 1; i >= (currentTileIdx / 8) * 8; i--){
+    for (int i=currentTileIdx-1; i>=(currentTileIdx/8)*8; i--){
         if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
             break;
         }
     }
-    for (int i = currentTileIdx + 1; i < (currentTileIdx / 8) * 8 + 8; i++){
+    for (int i=currentTileIdx+1; i<(currentTileIdx/8)*8+8; i++){
         if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
             break;
         }
@@ -300,7 +300,7 @@ void CalculateXAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* Traversa
 void CalculateYAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
     TileState TileOwner = map[currentTileIdx].CurrentOwner;
 
-    for (int i=currentTileIdx-8; i>=(i/8)*8; i-=8){
+    for (int i=currentTileIdx-8; i>=0; i-=8){
         if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
             break;
         }
@@ -314,15 +314,32 @@ void CalculateYAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* Traversa
 }
 
 
-void CalculateRightSideMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+void CalculateRightSideMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen) {
     TileState TileOwner = map[currentTileIdx].CurrentOwner;
-    TileState Enemy;
 
+    for (int i=currentTileIdx-7; i>=0 && i%8 != 0; i-=7) { 
+        if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)) {
+            break;
+        }
+    }
+    for (int i=currentTileIdx+7; i<MAP_SIZE && i%8!=7; i+=7) {  
+        if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)) {
+            break;
+        }
+    }
 }
 
-void CalculateLeftSideMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
-    
+
+void CalculateLeftSideMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen) {
+    TileState TileOwner = map[currentTileIdx].CurrentOwner;
+
+    for (int i=currentTileIdx+9; i<MAP_SIZE && i%8!=0; i+=9) {  
+        if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)) {
+            break;
+        }
+    }
 }
+
 
 void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
     uint8_t SavedEnemies[8] = {255, 255, 255, 255, 255, 255, 255, 255};
@@ -346,17 +363,18 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
         
         case BISHOP:
             *TraversablesLen = 0;
-            // CalculateRightSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
-            // CalculateLeftSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            CalculateRightSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            CalculateLeftSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             break;
 
         case QUEEN:
             *TraversablesLen = 0;
+            CalculateRightSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            CalculateLeftSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             CalculateXAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             CalculateYAxisMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
 
-            // CalculateRightSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
-            // CalculateLeftSideMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
+            
             break;
         case KING:
             *TraversablesLen = 0;
