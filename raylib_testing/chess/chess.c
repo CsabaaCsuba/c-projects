@@ -283,28 +283,25 @@ bool CheckTile(TileState CurrentTileOwner, TileState TileOwner, uint8_t* Travers
 
 void CalculateXAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
     TileState TileOwner = map[currentTileIdx].CurrentOwner;
-    TileState Enemy;
-    // printf("Current tile's idx: %d\n", currentTileIdx);
-    for (int i=currentTileIdx-1; i>=(i%8)*8; i--){
+
+    for (int i = currentTileIdx - 1; i >= (currentTileIdx / 8) * 8; i--){
         if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
             break;
         }
     }
-    for (int i=currentTileIdx+1; i<(i%8)*8+8; i++){
+    for (int i = currentTileIdx + 1; i < (currentTileIdx / 8) * 8 + 8; i++){
         if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
             break;
         }
     }
-    
 }
+
 
 void CalculateYAxisMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
     TileState TileOwner = map[currentTileIdx].CurrentOwner;
-    TileState Enemy;
-    // printf("Current tile's idx: %d\n", currentTileIdx);
+
     for (int i=currentTileIdx-8; i>=(i/8)*8; i-=8){
         if (CheckTile(map[i].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, i)){
-            printf("movement calculation broken.\n");
             break;
         }
     }
