@@ -396,6 +396,7 @@ void CalculatePawnMovement(Tile* map, uint8_t currentTileIdx, uint8_t* Traversab
         multiplier = -1;
     }
 
+    //TODO: if TileY+multiplier*7 or TileY+multiplier*9 is not empty, mark that cell / those cells available
 
     if (!map[currentTileIdx].hasPieceMoved){
 
