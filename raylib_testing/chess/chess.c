@@ -153,7 +153,7 @@ void LoadStartingMap(Tile* map, int mapLen){
     }
     // InitTile(map+3*8+3, QUEEN, PLAYER1, 3, 3);
     // InitTile(map+(8*6)+1, KING, PLAYER1, 1, 6);
-    // InitTile(map+3*8+5, KING, PLAYER2, 5, 3);
+    InitTile(map+3*8+5, KNIGHT, PLAYER1, 5, 3);
 
     // InitTile(map+3*8+6, QUEEN, PLAYER2, 6, 3);
 
@@ -168,10 +168,10 @@ void LoadStartingMap(Tile* map, int mapLen){
     // InitTile(map+6, KNIGHT, PLAYER1, 6, 0);
     InitTile(map+7, ROOK, PLAYER1, 7, 0);
     
-    // for (int i=0; i<8; i++){
-    //     InitTile(map+8+i, PAWN, PLAYER1, i, 1);
-    //     InitTile(map+(8*6)+i, PAWN, PLAYER2, i, 6); //lower player's characters
-    // }
+    for (int i=0; i<8; i++){
+        InitTile(map+8+i, PAWN, PLAYER1, i, 1);
+        InitTile(map+(8*6)+i, PAWN, PLAYER2, i, 6); //lower player's characters
+    }
     // for (int i=2*8; i<6*8; i++){
     //     InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
     // }
@@ -387,10 +387,43 @@ void CalculateSideMovement(Tile* map, uint8_t currentTileIdx, uint8_t* Traversab
 
 
 void CalculatePawnMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
-    
+    TileState TileOwner = map[currentTileIdx].CurrentOwner;
+    uint8_t TileX = currentTileIdx%8;
+    uint8_t TileY = currentTileIdx/8;
+    uint8_t multiplier = 1;
+
+    if (TileOwner == PLAYER2){
+        multiplier = -1;
+    }
+
+
+    if (!map[currentTileIdx].hasPieceMoved){
+
+    }
+
 }
 
 void CalculateKnightMovement(Tile* map, uint8_t currentTileIdx, uint8_t* TraversableTileIndices, uint8_t* TraversablesLen){
+    TileState TileOwner = map[currentTileIdx].CurrentOwner;
+    uint8_t TileX = currentTileIdx%8;
+    uint8_t TileY = currentTileIdx/8;
+
+    if (TileX < 6){
+        CheckTile(map[currentTileIdx-6].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx-6);
+        CheckTile(map[currentTileIdx+10].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx+10);
+    }
+    if (TileX < 7){
+        CheckTile(map[currentTileIdx-15].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx-15);
+        CheckTile(map[currentTileIdx+17].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx+17);
+    }
+    if (TileX > 1){
+        CheckTile(map[currentTileIdx+6].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx+6);
+        CheckTile(map[currentTileIdx-10].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx-10);
+    }
+    if (TileX > 0){
+        CheckTile(map[currentTileIdx+15].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx+15);
+        CheckTile(map[currentTileIdx-17].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx-17);
+    }
     
 }
 
@@ -463,6 +496,7 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
     switch (map[currentTileIdx].CurrentPiece){
         case PAWN:
             *TraversablesLen = 0;
+            CalculatePawnMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             break;
         case ROOK:
             *TraversablesLen = 0;
@@ -471,7 +505,8 @@ void CalculateTraversableTiles(Tile* map, uint8_t currentTileIdx, uint8_t* Trave
 
         case KNIGHT:
             *TraversablesLen = 0;
-           
+            // CalculateCrossMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen); //for testing purposes
+            CalculateKnightMovement(map, currentTileIdx, TraversableTileIndices, TraversablesLen);
             break;
         
         case BISHOP:
