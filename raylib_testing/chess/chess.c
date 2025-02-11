@@ -5,7 +5,7 @@
 #include <stdint.h>
 // #include <stdlib.h>
 
-typedef enum {
+typedef enum PieceType {
     REMOVED=0,
     PAWN,   //paraszt
     KNIGHT, //ló
@@ -15,19 +15,19 @@ typedef enum {
     KING
 } PieceType;
 
-typedef enum {
+typedef enum GameState {
     PLAYER1_TURN,
     PLAYER2_TURN,
     GAME_OVER
 } GameState;
 
-typedef enum {
+typedef enum TileState {
     PLAYER1,
     PLAYER2,
     EMPTY
 } TileState;
 
-typedef struct {
+typedef struct Tile {
     PieceType CurrentPiece;
     uint16_t pos_x;
     uint16_t pos_y;
@@ -152,9 +152,9 @@ void InitTile(Tile* tile, PieceType piece, TileState owner, uint8_t pos_x, uint8
 
 void LoadStartingMap(Tile* map, int mapLen){
     //THESE ARE FOR TESTING ONLY:
-    // for (int i=0; i<MAP_SIZE; i++){
-    //     InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
-    // }
+    for (int i=0; i<MAP_SIZE; i++){
+        InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
+    }
     // InitTile(map+3*8+0, QUEEN, PLAYER1, 0, 3);
     // InitTile(map+(8*6)+0, KING, PLAYER1, 0, 6);
     // InitTile(map+4*8+0, BISHOP, PLAYER1, 0, 4);
@@ -176,9 +176,9 @@ void LoadStartingMap(Tile* map, int mapLen){
         InitTile(map+8+i, PAWN, PLAYER1, i, 1);
         InitTile(map+(8*6)+i, PAWN, PLAYER2, i, 6); //lower player's pawns
     }
-    for (int i=2*8; i<6*8; i++){
-        InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
-    }
+    // for (int i=2*8; i<6*8; i++){
+    //     InitTile(map+i, REMOVED, EMPTY, i%8, i/8);
+    // }
 
     InitTile(map+(8*7), ROOK, PLAYER2, 0, 7);
     InitTile(map+(8*7)+1, KNIGHT, PLAYER2, 1, 7);
@@ -388,18 +388,27 @@ void CalculatePawnMovement(Tile* map, uint8_t currentTileIdx, uint8_t* Traversab
     TileState TileOwner = map[currentTileIdx].CurrentOwner;
     uint8_t TileX = currentTileIdx%8;
     uint8_t TileY = currentTileIdx/8;
-    uint8_t multiplier = 1;
+    // uint8_t multiplier = 1;
     TileState Enemy = PLAYER2;
 
     if (TileOwner == PLAYER2){
-        multiplier = -1;
+        // multiplier = -1;
         Enemy = PLAYER1;
         //Due to the TileX checking conditions, the "capturing" moves have to be coded out separately
+        //Plus, the multiplier didn't even work for the vertical movement check for player 2...
         if (map[currentTileIdx-7].CurrentOwner == Enemy && TileX != 7){
             CheckTile(map[currentTileIdx-7].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx-7);
         }
         if (map[currentTileIdx-9].CurrentOwner == Enemy && TileX != 0){
             CheckTile(map[currentTileIdx-9].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx-9);
+        }
+        if (map[currentTileIdx-8].CurrentPiece == REMOVED){
+            CheckTile(map[currentTileIdx-8].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx-8);
+        }
+        if (!map[currentTileIdx].hasPieceMoved){
+            if (map[currentTileIdx-16].CurrentPiece == REMOVED){
+                CheckTile(map[currentTileIdx-16].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx-16);
+            }
         }
     }
     else if (TileOwner == PLAYER1){
@@ -409,20 +418,18 @@ void CalculatePawnMovement(Tile* map, uint8_t currentTileIdx, uint8_t* Traversab
         if (map[currentTileIdx+9].CurrentOwner == Enemy && TileX != 7){
             CheckTile(map[currentTileIdx+9].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx+9);
         }
+        if (map[currentTileIdx+8].CurrentPiece == REMOVED){
+            CheckTile(map[currentTileIdx+8].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx+8);
+        }
+        if (!map[currentTileIdx].hasPieceMoved){
+            if (map[currentTileIdx+16].CurrentPiece == REMOVED){
+                CheckTile(map[currentTileIdx+16].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx+16);
+            }
+        }
     }
     else {
         printf("TileOwner is %d. I don't even know how the game got there...\n", TileOwner);
         return;
-    }
-
-    
-    if (map[currentTileIdx+8*multiplier].CurrentPiece == REMOVED){
-        CheckTile(map[currentTileIdx+8*multiplier].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx+8*multiplier);
-    }
-    if (!map[currentTileIdx].hasPieceMoved){
-        if (map[currentTileIdx+8*2*multiplier].CurrentPiece == REMOVED){
-            CheckTile(map[currentTileIdx+8*2*multiplier].CurrentOwner, TileOwner, TraversableTileIndices, TraversablesLen, currentTileIdx+8*2*multiplier);
-        }
     }
 }
 
@@ -614,8 +621,11 @@ void Move(Tile* map, uint8_t fromIdx, uint8_t toIdx, TileState* currentPlayer, c
         }
         
     }
+    // printf("%d hit %d", map[]);
+
     map[toIdx].CurrentOwner = map[fromIdx].CurrentOwner;
     map[toIdx].CurrentPiece = map[fromIdx].CurrentPiece;
+    map[toIdx].hasPieceMoved = true;
 
     map[fromIdx].CurrentOwner = EMPTY;
     map[fromIdx].CurrentPiece = REMOVED;
@@ -628,7 +638,7 @@ void Move(Tile* map, uint8_t fromIdx, uint8_t toIdx, TileState* currentPlayer, c
 
 
 int main(){
-    SetTargetFPS(60);
+    // SetTargetFPS(60);
     LoadStartingMap(map, MAP_SIZE);
     InitWindow(window_width, window_height, "Chess Gameplay");
     SetTraceLogLevel(LOG_ERROR); 
