@@ -638,7 +638,7 @@ void Move(Tile* map, uint8_t fromIdx, uint8_t toIdx, TileState* currentPlayer, c
 
 
 int main(){
-    // SetTargetFPS(60);
+    SetTargetFPS(144);
     LoadStartingMap(map, MAP_SIZE);
     InitWindow(window_width, window_height, "Chess Gameplay");
     SetTraceLogLevel(LOG_ERROR); 
