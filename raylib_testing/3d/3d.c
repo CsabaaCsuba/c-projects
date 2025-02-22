@@ -10,6 +10,7 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 450;
 
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(screenWidth, screenHeight, "raylib [core] example - 3d camera mode");
 
     // Define the camera to look into our 3d world
