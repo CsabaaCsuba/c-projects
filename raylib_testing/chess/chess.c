@@ -764,7 +764,7 @@ int main()
             goto LoopEnd;
         }
 
-        DrawTileDebugInfo();
+        // DrawTileDebugInfo();
 
         LatestClickIdx = GetClickedTileIdx(map);
 
